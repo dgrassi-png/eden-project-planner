@@ -72,14 +72,48 @@ it is unaffected by DST.
   used before the seed phase. Since Phase 01 they appear only while Supabase
   is not configured.
 
-## D-006 — Gantt library (pending, Phase 02)
+## D-006: Gantt rendering: own layer, no third-party Gantt library (Phase 02)
 
-Not decided yet. The Phase 02 evaluation will record, for each candidate,
-its license, drag/resize support, custom rendering, dependency arrows and
-maintenance status, then select one or justify a custom renderer. Constraints:
-permissive license, no paid tier needed for essential features, React 19 /
-Next.js 16 compatible. The planner shell is built so the timeline pane can be
-replaced without touching the domain or data layers.
+**Decision.** The timeline is rendered by our own small layer on top of the
+Phase 00 axis. Bars, milestones and start markers are absolutely positioned
+elements; dependency arrows are SVG paths; drag and resize use pointer
+events. Geometry and snapping rules are pure functions in
+`src/domain/timeline/gantt.ts` and are unit tested.
+
+**Candidates evaluated** (npm metadata checked 2026-09-29):
+
+| Library | License | Verdict |
+|---|---|---|
+| SVAR React Gantt 2.7 (`@svar-ui/react-gantt`) | MIT core + commercial PRO | Rejected: work-time calendar, **unscheduled tasks**, **vertical markers (today line)** and **task grouping** are PRO-only |
+| DHTMLX Gantt 10 Community (`dhtmlx-gantt`) | MIT + commercial PRO | Rejected: working-time calendars are PRO-only; imperative global API, own data store and lightbox; type definitions include PRO-only methods |
+| Frappe Gantt 1.2 | MIT | Rejected: no hierarchy or workstream grouping, renders its own rows (cannot align with our table); vanilla JS; moves dependencies by default |
+| React Modern Gantt 0.9 | MIT | Rejected: 0.x with a single maintainer; flat groups, no subtasks, no working-day calendar |
+| gantt-task-react 0.3.9 | MIT | Rejected: unmaintained since 2022, React 18 only |
+| Bryntum Gantt, Syncfusion Gantt | Commercial | Rejected: paid licences |
+
+**Why our own layer is the better fit:**
+- The database is authoritative: drag → propose → validate on the server →
+  persist → reload. Libraries keep their own mutable task store, which would
+  have to be intercepted on every change (and in Phase 03, held back for the
+  impact preview and the explicit cascade).
+- Our scheduling semantics (Mon–Fri working days, start day counts as day 1,
+  weekend starts rejected, zero-duration milestones on any day, derived
+  finish) are domain rules we already test. Free editions do not offer a
+  working-day calendar, so it would have to be reimplemented around them
+  anyway.
+- The axis, sticky hierarchy table, zoom and today line already existed and
+  were tested. Bars, arrows, drag/resize and the unscheduled tray added about 900 lines.
+
+**Limitations and mitigations:**
+- No row virtualisation. That is fine for hundreds of tasks; add windowing if
+  the plan grows past about 1,500 rows.
+- Dependency arrows use simple orthogonal routing and can cross labels
+  (labels get a translucent background).
+- No drag-to-create dependencies and no left-edge resize (change the start
+  in the task panel instead). Both can be added later on the same geometry
+  functions.
+- Touch input works through pointer events but is not optimised (the app
+  is desktop-first).
 
 ## D-007: Persistence and access model (Phase 01)
 
@@ -174,3 +208,35 @@ instead of silently overwriting a colleague's change.
 - Send `expectedUpdatedAt` with drag/resize and handle 409 by reloading.
 - Dependency arrows use `predecessors`/`successors` from the planner view
   model. Violation warnings and cascade are Phase 03.
+
+## D-014: Timeline interaction rules (Phase 02)
+
+- **Move** (drag a bar): changes `plannedStart`; duration is kept and the
+  finish is re-derived. Task starts snap to a working day in the drag
+  direction; milestones may land on any day.
+- **Resize** (drag the finish edge): changes `plannedDurationDays` in working
+  days, minimum 1. A finish dragged onto a weekend snaps back to Friday.
+- **Keyboard**: a focused bar moves with ←/→ and changes duration with
+  Shift+←/→; Enter opens the task panel.
+- **Unscheduled** tasks have no bar and are listed in the Unscheduled tray.
+  Double-clicking a task's timeline row sets its start (duration stays TBD
+  until validated). Tasks with a start but no duration show a start marker.
+- **DONE and CANCELLED** tasks are locked on the timeline (they can still be
+  edited explicitly in the task panel).
+- Every change is a single PATCH with `expectedUpdatedAt`. It **never moves
+  other tasks**: successors stay put until the Phase 03 impact preview and
+  explicit cascade. A conflicting edit is rejected (409) and the view
+  reloads.
+- Workstream rows show a display-only span of their scheduled tasks. It is
+  computed and never stored.
+
+## D-015: Offline validation and future authentication (2026-09-29)
+
+Decided by the product owner:
+- For now the planner runs **locally only** (no public deployment) while the
+  team validates planning data and workflows. Local development uses the
+  Supabase CLI stack (`npx supabase start`, requires Docker) or a hosted
+  Supabase project with the app running on `localhost`.
+- When sign-in is added, it is restricted to **`@e-den.tech`** accounts
+  (Supabase Auth, email domain enforced server-side and in RLS policies).
+  Until then the planner must not be deployed publicly.

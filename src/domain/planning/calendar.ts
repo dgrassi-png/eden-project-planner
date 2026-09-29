@@ -20,6 +20,13 @@ export function nextWorkingDayOnOrAfter(date: IsoDate): IsoDate {
   return cursor;
 }
 
+/** The given date if it is a working day, otherwise the previous working day. */
+export function previousWorkingDayOnOrBefore(date: IsoDate): IsoDate {
+  let cursor = date;
+  while (!isWorkingDay(cursor)) cursor = addDays(cursor, -1);
+  return cursor;
+}
+
 /** Moves `count` working days forward from a working day (`count` >= 0). */
 export function addWorkingDays(start: IsoDate, count: number): IsoDate {
   if (!Number.isInteger(count) || count < 0) throw new RangeError("count must be a non-negative integer");

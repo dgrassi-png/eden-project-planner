@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { diffDays } from "./dates";
-import { buildTimelineAxis, PX_PER_DAY, ZOOM_LEVELS } from "./scale";
+import { buildTimelineAxis, PX_PER_DAY, weekendPattern, ZOOM_LEVELS } from "./scale";
 
 const today = "2026-09-29";
 
@@ -45,5 +45,13 @@ describe("buildTimelineAxis", () => {
 
   it("rejects empty ranges", () => {
     expect(() => buildTimelineAxis({ today, zoom: "week", range: { start: today, end: today } })).toThrow(RangeError);
+  });
+});
+
+describe("weekendPattern", () => {
+  it("finds the first Saturday from the axis start", () => {
+    expect(weekendPattern({ start: "2026-08-31", pxPerDay: 10 })).toEqual({ periodPx: 70, firstSaturdayPx: 50, widthPx: 20 }); // Monday
+    expect(weekendPattern({ start: "2026-08-01", pxPerDay: 10 }).firstSaturdayPx).toBe(0); // Saturday
+    expect(weekendPattern({ start: "2026-08-02", pxPerDay: 10 }).firstSaturdayPx).toBe(60); // Sunday
   });
 });

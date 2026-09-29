@@ -5,7 +5,7 @@ Web-based master planning system for E:DEN.
 **Planner = source of truth. Trello = execution layer.**
 
 ## V0
-- True interactive Gantt
+- True interactive Gantt (drag to move, resize to change duration, dependency arrows, milestones, unscheduled tray)
 - Project > Workstream > Task > Subtask
 - Stable E:DEN task IDs
 - Owner, dates, duration, status, priority, geography
@@ -33,7 +33,28 @@ The app runs with an empty environment. The planner then shows clearly marked
 UI scaffolding. `/settings/integrations` shows which integrations are configured
 (never their values).
 
-### Supabase
+### Local Supabase (offline, recommended for now)
+
+Requires Docker Desktop.
+
+```bash
+npx supabase start        # starts local Postgres/Auth/API and applies supabase/migrations
+npx supabase status       # prints the local API URL, anon key and service_role key
+```
+
+Put the printed values into `.env.local`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>
+SUPABASE_SERVICE_ROLE_KEY=<service_role key>
+```
+
+Then run `npm run dev`. `npx supabase db reset` re-applies the migrations to an
+empty database; there is no seed data. Studio (the database UI) is at
+http://127.0.0.1:54323.
+
+### Hosted Supabase
 
 1. Create a Supabase project.
 2. Apply the migrations in `supabase/migrations/` in filename order, either

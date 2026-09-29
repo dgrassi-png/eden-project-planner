@@ -88,7 +88,7 @@ const nextMonth = (value: IsoDate) => addMonths(value, 1);
 const nextQuarter = (value: IsoDate) => addMonths(value, 3);
 const nextYear = (value: IsoDate) => addMonths(value, 12);
 
-function defaultRange(today: IsoDate, zoom: ZoomLevel): { start: IsoDate; end: IsoDate } {
+export function defaultRange(today: IsoDate, zoom: ZoomLevel): { start: IsoDate; end: IsoDate } {
   switch (zoom) {
     case "week":
       return { start: startOfIsoWeek(addDays(today, -28)), end: startOfIsoWeek(addDays(today, 7 * 26)) };
@@ -144,4 +144,37 @@ export function buildTimelineAxis(params: {
 
 export function dateToOffsetPx(axisStart: IsoDate, value: IsoDate, pxPerDay: number): number {
   return diffDays(axisStart, value) * pxPerDay;
+}
+
+const ALIGN: Record<ZoomLevel, (value: IsoDate) => IsoDate> = {
+  week: startOfIsoWeek,
+  month: startOfMonth,
+  quarter: startOfQuarter,
+};
+
+/**
+ * Range covering the default window around today plus every planned date,
+ * with one zoom unit of padding. Tasks are never positioned outside the axis.
+ */
+export function rangeForDates(today: IsoDate, zoom: ZoomLevel, dates: IsoDate[]): { start: IsoDate; end: IsoDate } {
+  const base = defaultRange(today, zoom);
+  if (!dates.length) return base;
+  const sorted = [...dates].sort();
+  const min = sorted[0] as IsoDate;
+  const max = sorted[sorted.length - 1] as IsoDate;
+  const padStart = zoom === "week" ? addDays(min, -7) : addMonths(min, zoom === "month" ? -1 : -3);
+  const padEnd = zoom === "week" ? addDays(max, 14) : addMonths(max, zoom === "month" ? 2 : 6);
+  const start = ALIGN[zoom](padStart);
+  const end = ALIGN[zoom](padEnd);
+  return { start: start < base.start ? start : base.start, end: end > base.end ? end : base.end };
+}
+
+/**
+ * Weekend shading as a repeating 7-day pattern: returns the offset (px) of the
+ * first Saturday from the axis start, so a CSS gradient can tile it.
+ */
+export function weekendPattern(axis: Pick<TimelineAxis, "start" | "pxPerDay">): { periodPx: number; firstSaturdayPx: number; widthPx: number } {
+  const weekday = (parseIsoDate(axis.start).getUTCDay() + 6) % 7; // Monday = 0
+  const daysToSaturday = (5 - weekday + 7) % 7;
+  return { periodPx: 7 * axis.pxPerDay, firstSaturdayPx: daysToSaturday * axis.pxPerDay, widthPx: 2 * axis.pxPerDay };
 }
