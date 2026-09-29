@@ -5,6 +5,8 @@ import { z } from "zod";
 import { EnvValidationError } from "@/config/env.schema";
 import type { Issue } from "@/domain/result";
 import { HTTP_STATUS, PlanningError } from "@/lib/planning/errors";
+import { getCurrentPrincipal } from "@/lib/auth/server";
+import { actorFor } from "@/lib/auth/session";
 import { getPlanningBackend } from "@/lib/planning/server";
 import type { PlanningService } from "@/lib/planning/service";
 
@@ -77,7 +79,9 @@ export function planningRoute<P>(handler: (ctx: HandlerContext<P>) => Promise<un
   return async (request: Request, context: { params: Promise<P> }): Promise<Response> => {
     try {
       if (isCrossOrigin(request)) return errorResponse(403, "forbidden", "Cross-origin request rejected");
-      const backend = getPlanningBackend();
+      const principal = await getCurrentPrincipal();
+      if (!principal) return errorResponse(401, "unauthenticated", "Sign in with E:DEN Identity");
+      const backend = getPlanningBackend(actorFor(principal));
       if (backend.status !== "ready") {
         return errorResponse(503, "unavailable", "Supabase is not configured on the server");
       }

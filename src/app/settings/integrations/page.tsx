@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { TRELLO_BOARD_REFERENCE_URL } from "@/config/app";
 import { EnvValidationError, type ServerEnv } from "@/config/env.schema";
 import { getServerEnv } from "@/config/env.server";
+import { requirePagePrincipal } from "@/lib/auth/server";
 import { getIntegrationStatuses, type IntegrationStatus } from "@/lib/integrations/status";
 
 export const metadata: Metadata = { title: "Integrations" };
@@ -20,6 +21,7 @@ function byId(statuses: IntegrationStatus[], id: IntegrationStatus["id"]): Integ
 export default async function IntegrationsPage() {
   // Configuration is read at request time, never baked into the build.
   await connection();
+  await requirePagePrincipal("/settings/integrations");
 
   let env: ServerEnv;
   try {
@@ -53,13 +55,19 @@ export default async function IntegrationsPage() {
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className="grid max-w-5xl gap-4 lg:grid-cols-2">
           <IntegrationCard
+            status={byId(statuses, "identity")}
+            description="Sign-in via auth.e-den.tech. Identity is the only source of truth for internal access; the planner consumes the platform_full_access claim and never re-derives access from the email domain."
+          >
+            <p className="text-[11px] text-neutral-500">Required online. Offline, local-dev mode serves loopback requests only.</p>
+          </IntegrationCard>
+
+          <IntegrationCard
             status={byId(statuses, "supabase")}
-            description="Postgres database and authentication. The planner database is the planning source of truth."
+            description="Planner-owned Postgres database, the planning source of truth. Supabase Auth is not used."
           >
             <p className="text-[11px] text-neutral-500">
               Apply <code className="font-mono">supabase/migrations</code> to the project. Planning data is read and
-              written server-side with the service-role key. The browser never talks to the database directly. Sign-in
-              is not enabled yet.
+              written server-side with the service-role key; the browser never talks to the database.
             </p>
           </IntegrationCard>
 

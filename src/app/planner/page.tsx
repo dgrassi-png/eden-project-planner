@@ -10,6 +10,7 @@ import { toPlannerData } from "@/components/planner/viewModel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PLANNING_TIME_ZONE } from "@/config/app";
 import { todayInTimeZone } from "@/domain/timeline/dates";
+import { requirePagePrincipal } from "@/lib/auth/server";
 import { loadProjectPage } from "@/lib/planning/pageData";
 
 export const metadata: Metadata = { title: "Planner" };
@@ -20,7 +21,7 @@ export default async function PlannerPage({ searchParams }: PageProps<"/planner"
   const today = todayInTimeZone(PLANNING_TIME_ZONE);
   const todayLabel = `Today ${today} (${PLANNING_TIME_ZONE})`;
 
-  const page = await loadProjectPage((await searchParams).project, async (service, project) =>
+  const page = await loadProjectPage(await requirePagePrincipal("/planner"), (await searchParams).project, async (service, project) =>
     toPlannerData(await service.getSnapshot(project.id)),
   );
 

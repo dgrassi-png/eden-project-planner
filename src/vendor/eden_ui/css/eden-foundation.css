@@ -1,0 +1,483 @@
+/*
+ * E:DEN Foundation — framework-neutral source of truth.
+ *
+ * This file is intentionally usable as plain CSS by Django, React/Next,
+ * static pages and future products. It owns brand and semantic tokens,
+ * typography, spacing, depth, motion, focus/accessibility and the small set of
+ * cross-product primitives that have real consumers. Product art direction
+ * belongs in product CSS and must build on these variables rather than rename
+ * hard-coded copies as E:DEN tokens.
+ */
+
+:root {
+    color-scheme: light;
+
+    /* Brand palette: one authoritative value per E:DEN colour. */
+    --eden-ivory: #eeeae0;
+    --eden-warm-white: #faf8f2;
+    --eden-paper: #f5f2e9;
+    --eden-graphite: #292b28;
+    --eden-black: #10110f;
+    --eden-aluminium: #c8cac4;
+    --eden-aluminium-dark: #777b75;
+    --eden-sky: #9dcfe0;
+    --eden-sage: #a9c5aa;
+    --eden-yellow: #edcb3c;
+    --eden-terracotta: #bd6b4c;
+    --eden-pink: #d8b5b0;
+
+    /* NC-UI Soft Mechanics Rev.01 (15.09.2026) — cool operational neutrals.
+     * Distinct from the warm --eden-ivory/--eden-graphite pair above: these
+     * are additive brand primitives, not a replacement. --eden-ivory stays
+     * the default canvas for any consumer that doesn't opt into the
+     * operational Soft Mechanics scope (see eden-system.css, which is where
+     * Django products remap their canvas/surface semantics onto these). */
+    --eden-carbon: #1b1b1e;
+    --eden-ice: #e4ebf2;
+
+    /* EDEN Brand System 2026 / Rev. 01 — primary brand accents. */
+    --eden-blue: #028cf3;
+    --eden-cyan: #00fff7;
+    --eden-mint: #2feaa8;
+    /* Deprecated alias — other branches not yet carrying this rebrand still
+     * reference --eden-orange directly from several product consumers.
+     * Keep it pointed at the new primary accent so anything that
+     * merges/cherry-picks only part of this change doesn't silently lose
+     * its accent colour. Do not use in new code: use --eden-blue /
+     * --eden-color-accent-primary directly. Remove once every branch that
+     * references --eden-orange has picked up this rebrand. */
+    --eden-orange: var(--eden-blue);
+
+    /* Theme-adaptive semantic colour contract. */
+    --eden-positive: #276447;
+    --eden-warning: #9b561f;
+    --eden-danger: #a52d26;
+    --eden-border: #b9bbb4;
+    --eden-border-strong: #777b75;
+    --eden-border-selected: #779778;
+    --eden-muted: #5a5e58;
+    --eden-focus: #0b5f7b;
+    --eden-area: var(--eden-sky);
+    --eden-area-ink: #10110f;
+    --eden-ink: #10110f;
+    --eden-tint-positive: #e5f0e7;
+    --eden-tint-warning: #f6ead9;
+    --eden-tint-danger: #f8e7e3;
+    --eden-tint-info: #e2eef2;
+
+    --eden-color-canvas: var(--eden-ivory);
+    --eden-color-surface: var(--eden-warm-white);
+    --eden-color-surface-raised: var(--eden-paper);
+    /* Background colour for an incised/recessed surface (inputs, tracks,
+     * display slots) — pairs with the existing --eden-depth-inset SHADOW,
+     * which had no matching colour token until now. A touch darker than
+     * canvas in light/outdoor, a touch lighter in dark (see theme blocks
+     * below). */
+    --eden-color-surface-recessed: color-mix(in srgb, var(--eden-color-canvas) 92%, var(--eden-graphite));
+    --eden-color-text: var(--eden-graphite);
+    --eden-color-text-muted: var(--eden-muted);
+    --eden-color-border: var(--eden-border);
+    --eden-color-border-strong: var(--eden-border-strong);
+    --eden-accent-primary: var(--eden-blue);
+    --eden-color-accent-primary: var(--eden-accent-primary);
+    /* Blue as a hairline/text foreground on light canvas falls short of
+     * 4.5:1 (~2.9:1 on Ivory). Use this derived, darkened variant for any
+     * non-fill usage (text, links, thin strokes, borders) — reserve the raw
+     * --eden-blue for opaque fills, where the black foreground it carries
+     * already clears contrast on its own. */
+    --eden-color-accent-primary-ink: color-mix(in srgb, var(--eden-blue) 75%, black);
+    --eden-color-accent-secondary: var(--eden-cyan);
+    /* Signal Cyan is near-white luminance and unusable as-is on light
+     * surfaces (≈1:1). Derived, darkened toward Carbon for legibility. */
+    --eden-color-accent-secondary-ink: color-mix(in srgb, var(--eden-cyan) 40%, var(--eden-black));
+    --eden-color-accent-tertiary: var(--eden-mint);
+    /* E:DEN Flow — bidimensional field (not a 4-stop linear sequence):
+     * top-left #ffffff, top-right #1b1b1e (Carbon), bottom-left #2feaa8
+     * (Bio Mint, no lightening), bottom-right #028cf3 (E:DEN Blue). A true
+     * bilinear blend can't be expressed as a CSS gradient function, so the
+     * field is a small pre-rendered raster (regenerate with
+     * img/generate-flow-field.py if the corner values change) — this is an
+     * OPERATIVE definition for this implementation, not a sampling of the
+     * original approved brand asset.
+     *
+     * DECORATIVE SURFACE ONLY — never as a background-clip:text fill and
+     * never as the sole background directly behind readable text. Measured
+     * (rendered at 1400x500): text clipped to this field is fully invisible
+     * over Ice/Ivory (the white corner reads as ~1:1 against a light page)
+     * and loses definition over Carbon/dark canvas wherever the field
+     * itself turns dark (the blue-into-carbon side). There is no fixed
+     * text colour that stays readable across all four corners at once, so
+     * this can't be fixed by picking a different on-accent value — use
+     * .eden-flow-surface for panels/bars/chip backgrounds/button fills
+     * with their own *solid* on-accent (or canvas-ink) text on top, or as
+     * a plain decorative accent with no text over it at all. */
+    /* Inlined as a data: URI (not a file url()): a url() inside a custom
+     * property resolves relative to whichever stylesheet USES var(), not
+     * the one that declares it — so a relative path here breaks for any
+     * consumer file at a different directory depth than this one. A
+     * data: URI has no relative path to break, so it works identically
+     * from every consumer. The source PNG + regeneration script still
+     * live in img/eden-flow-field.png / img/generate-flow-field.py. */
+    --eden-gradient-flow: url("data:image/png;base64,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");
+    --eden-color-on-accent: var(--eden-black);
+    --eden-color-success: var(--eden-positive);
+    --eden-color-warning: var(--eden-warning);
+    --eden-color-danger: var(--eden-danger);
+
+    /* High-contrast floating surfaces (tooltips, chart inspectors, menus).
+     * These tokens are intentionally invariant: a dark overlay must keep a
+     * light foreground even when the active theme remaps surface colours. */
+    --eden-color-overlay: #10110f;
+    --eden-color-on-overlay: #faf8f2;
+    --eden-color-on-overlay-muted: #d2d4ce;
+    --eden-color-overlay-border: #777b75;
+
+    /* Invariant dark chassis material, shared by operational products. */
+    --eden-rail-border: #343631;
+    --eden-rail-text-muted: #bbbdb7;
+    --eden-rail-hover-bg: #252723;
+    --eden-text-secondary-on-dark: #d2d4ce;
+    --eden-chassis: #1e2229;
+    --eden-chassis-raised: #272d36;
+    --eden-chassis-inset: #141920;
+    --eden-chassis-shadow-raised: 5px 5px 11px rgba(10, 12, 16, .62), -4px -4px 10px rgba(55, 63, 75, .22);
+    --eden-chassis-shadow-pressed: inset 4px 4px 9px rgba(10, 12, 16, .62), inset -3px -3px 8px rgba(55, 63, 75, .18);
+
+    /* Typography foundation. Editorial scales may extend this locally. */
+    --eden-font-sans: "Neue Haas Grotesk Text Pro", "Neue Haas Grotesk", Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --eden-font-mono: "Space Mono", "SFMono-Regular", Consolas, monospace;
+    --eden-font-editorial: Georgia, "Times New Roman", serif;
+    --eden-font-weight-regular: 400;
+    --eden-font-weight-medium: 500;
+    --eden-font-weight-semibold: 600;
+    --eden-font-weight-bold: 700;
+    --eden-font-size-xs: .625rem;
+    --eden-font-size-sm: .75rem;
+    --eden-font-size-md: 1rem;
+    --eden-font-size-lg: 1.25rem;
+    --eden-font-size-xl: 1.75rem;
+    --eden-line-height-tight: 1.1;
+    --eden-line-height-body: 1.45;
+    --eden-line-height-relaxed: 1.65;
+    --eden-tracking-technical: .12em;
+    --eden-tracking-display: -.055em;
+
+    /* Spacing and shape. */
+    --eden-space-4: 4px;
+    --eden-space-8: 8px;
+    --eden-space-12: 12px;
+    --eden-space-16: 16px;
+    --eden-space-24: 24px;
+    --eden-space-32: 32px;
+    --eden-space-48: 48px;
+    --eden-space-64: 64px;
+    /* NC-UI Rev.01 semantic mapping: -sm(4)=R4 small controls/bars,
+     * -md(8)=R8 input/button/row, -panel(12)=R12 panel/toolbar,
+     * -hero(18)=R18 hero/overlay exceptions. -xs/-lg/-pill are prior,
+     * independent exceptions kept as-is (not part of the R4/8/12/18 scale). */
+    --eden-radius-xs: 2px;
+    --eden-radius-sm: 4px;
+    --eden-radius-md: 8px;
+    --eden-radius-panel: 12px;
+    --eden-radius-hero: 18px;
+    --eden-radius-lg: 22px;
+    --eden-radius-pill: 999px;
+    --eden-touch-target: 44px;
+    --eden-rail-width: 76px;
+    --eden-context-width: 236px;
+    --eden-context-collapsed-width: 56px;
+
+    /* Motion. GSAP/cinematic timelines remain product-owned. */
+    --eden-motion-instant: 1ms;
+    --eden-motion-fast: 120ms;
+    --eden-motion-base: 220ms;
+    --eden-motion-slow: 420ms;
+    --eden-ease-standard: cubic-bezier(.2, 0, 0, 1);
+    --eden-ease-emphasized: cubic-bezier(.2, .8, .2, 1);
+
+    /* Short, stable layer scale. */
+    --eden-layer-content: 0;
+    --eden-layer-shell: 10;
+    --eden-layer-sticky: 20;
+    --eden-layer-drawer-scrim: 30;
+    --eden-layer-drawer: 40;
+    --eden-layer-popover: 50;
+    --eden-layer-tooltip: 60;
+    --eden-layer-modal: 70;
+
+    /* Soft Mechanics depth families. */
+    --eden-sm-shadow-dark: rgba(172, 163, 145, .55);
+    --eden-sm-shadow-light: rgba(255, 255, 255, .95);
+    --eden-depth-structural: 8px 8px 16px var(--eden-sm-shadow-dark), -8px -8px 16px var(--eden-sm-shadow-light);
+    --eden-depth-inset: inset 6px 6px 12px var(--eden-sm-shadow-dark), inset -6px -6px 12px var(--eden-sm-shadow-light);
+    --eden-depth-raised: 6px 6px 12px var(--eden-sm-shadow-dark), -6px -6px 12px var(--eden-sm-shadow-light);
+    --eden-depth-raised-active: 9px 9px 18px var(--eden-sm-shadow-dark), -9px -9px 18px var(--eden-sm-shadow-light);
+    --eden-depth-emergent: 11px 11px 22px var(--eden-sm-shadow-dark), -9px -9px 20px var(--eden-sm-shadow-light);
+    --eden-depth-pressed: inset 5px 5px 10px var(--eden-sm-shadow-dark), inset -5px -5px 10px var(--eden-sm-shadow-light);
+}
+
+:root[data-eden-theme="dark"] {
+    color-scheme: dark;
+    --eden-ivory: #1b1c17;
+    --eden-warm-white: #232419;
+    --eden-paper: #1f2018;
+    --eden-graphite: #eeeae0;
+    --eden-black: #0a0a08;
+    --eden-aluminium: #4d5049;
+    --eden-aluminium-dark: #8b8e85;
+    --eden-border: #3a3c34;
+    --eden-border-strong: #55584e;
+    --eden-border-selected: #779778;
+    --eden-muted: #a3a69b;
+    --eden-positive: #5fb98a;
+    --eden-warning: #d99a4f;
+    --eden-danger: #e2726a;
+    /* Blue already clears 4.5:1 directly against the dark canvas/paper, so
+     * no darkening is needed here (darkening toward black would instead
+     * reduce contrast on a dark background). Cyan is toned down from raw
+     * Signal Cyan to stay a controlled accent rather than a neon one. */
+    --eden-color-accent-primary-ink: var(--eden-blue);
+    --eden-color-accent-secondary-ink: color-mix(in srgb, var(--eden-cyan) 65%, var(--eden-black));
+    --eden-focus: #6fc3e0;
+    --eden-ink: #faf8f2;
+    --eden-area-ink: #10110f;
+    --eden-tint-positive: #1c3226;
+    --eden-tint-warning: #3a2c15;
+    --eden-tint-danger: #3a1e1a;
+    --eden-tint-info: #16303a;
+    --eden-terracotta: #d97d5a;
+    --eden-sm-shadow-dark: rgba(0, 0, 0, .6);
+    --eden-sm-shadow-light: rgba(255, 255, 255, .05);
+    /* Dark canvas: a recessed surface reads as slightly LIGHTER than canvas
+     * (light escaping the incision), not darker. */
+    --eden-color-surface-recessed: color-mix(in srgb, var(--eden-color-canvas) 90%, white);
+}
+
+:root[data-eden-theme="outdoor"] {
+    color-scheme: light;
+    --eden-ivory: #ffffff;
+    --eden-warm-white: #ffffff;
+    --eden-paper: #f4f4f0;
+    --eden-graphite: #000000;
+    --eden-black: #000000;
+    --eden-ink: #000000;
+    --eden-aluminium: #55584f;
+    --eden-aluminium-dark: #2b2d28;
+    --eden-sky: #0088b0;
+    --eden-sage: #157a37;
+    --eden-yellow: #d99a00;
+    --eden-terracotta: #a3421f;
+    --eden-pink: #a13a4a;
+    /* Outdoor requires the strongest contrast of the three modes. */
+    --eden-color-accent-primary-ink: color-mix(in srgb, var(--eden-blue) 65%, black);
+    --eden-color-accent-secondary-ink: color-mix(in srgb, var(--eden-cyan) 35%, var(--eden-black));
+    /* Solid, not a soft field: outdoor favours flat, high-contrast surfaces
+     * over blends. .eden-flow-surface falls back to plain Blue here. */
+    --eden-gradient-flow: var(--eden-blue);
+    --eden-positive: #0d7a34;
+    --eden-warning: #a35c00;
+    --eden-danger: #c81f14;
+    --eden-border: #000000;
+    --eden-border-strong: #000000;
+    --eden-border-selected: #000000;
+    --eden-muted: #3a3c36;
+    --eden-focus: #00647f;
+    --eden-area-ink: #000000;
+    --eden-tint-positive: #d3edd9;
+    --eden-tint-warning: #f2ddad;
+    --eden-tint-danger: #f6d0ca;
+    --eden-tint-info: #cbe9f2;
+    --eden-motion-fast: var(--eden-motion-instant);
+    --eden-motion-base: var(--eden-motion-instant);
+    --eden-depth-structural: none;
+    --eden-depth-inset: none;
+    --eden-depth-raised: none;
+    --eden-depth-raised-active: none;
+    --eden-depth-emergent: none;
+    --eden-depth-pressed: none;
+}
+
+/* Accessibility contract, activated explicitly by every consumer. */
+:where([data-eden-foundation], .eden-app-body) :focus-visible {
+    outline: 2px solid var(--eden-focus);
+    outline-offset: 2px;
+}
+
+.eden-sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Canonical brand asset. The URL is resolved by Django staticfiles and Next. */
+.eden-brand-mark {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    background: url("../img/eden-mark.svg") center / contain no-repeat;
+}
+
+/* E:DEN Flow field — a background surface, not a text fill (see the
+ * --eden-gradient-flow definition above for why background-clip:text is
+ * unsafe here). Stretches to fill so the four corners always land in
+ * their fixed positions regardless of the container's aspect ratio — do
+ * not switch this to `cover`/`contain`, either would break that mapping.
+ * Sparing use only (a panel/bar/chip/button fill, with solid on-accent
+ * text on top, or pure decoration with no text over it). Solid in
+ * outdoor (see token definition) — this rule's own background-size /
+ * -position / -repeat are harmless no-ops against a plain colour there. */
+.eden-flow-surface {
+    background: var(--eden-gradient-flow) center / 100% 100% no-repeat;
+}
+
+.eden-brand-lockup {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--eden-space-8);
+    color: inherit;
+    font-family: var(--eden-font-mono);
+    font-size: var(--eden-font-size-sm);
+    font-weight: var(--eden-font-weight-bold);
+    letter-spacing: .08em;
+    text-decoration: none;
+}
+
+/* Cross-stack primitive language. Product CSS may add layout, not redefine it. */
+.eden-ui-technical-label {
+    margin: 0;
+    color: var(--eden-color-accent-primary-ink);
+    font-family: var(--eden-font-mono);
+    font-size: var(--eden-font-size-xs);
+    font-weight: var(--eden-font-weight-bold);
+    letter-spacing: var(--eden-tracking-technical);
+    line-height: var(--eden-line-height-tight);
+    text-transform: uppercase;
+}
+
+.eden-ui-button {
+    min-height: var(--eden-touch-target);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--eden-space-8);
+    padding: .75rem 1rem;
+    border: 1px solid var(--eden-color-border-strong);
+    border-radius: var(--eden-radius-sm);
+    background: transparent;
+    color: var(--eden-color-text);
+    font-family: var(--eden-font-mono);
+    font-size: var(--eden-font-size-xs);
+    font-weight: var(--eden-font-weight-bold);
+    letter-spacing: .1em;
+    line-height: 1;
+    text-decoration: none;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color var(--eden-motion-fast) var(--eden-ease-standard), border-color var(--eden-motion-fast) var(--eden-ease-standard), color var(--eden-motion-fast) var(--eden-ease-standard), transform var(--eden-motion-fast) var(--eden-ease-standard);
+}
+.eden-ui-button--primary { background: var(--eden-color-accent-primary); border-color: var(--eden-color-accent-primary); color: var(--eden-color-on-accent); }
+.eden-ui-button--secondary { background: transparent; border-color: var(--eden-color-border-strong); color: var(--eden-color-text); }
+.eden-ui-button--danger { background: transparent; border-color: var(--eden-color-danger); color: var(--eden-color-danger); }
+.eden-ui-button:hover:not(:disabled) { transform: translateY(-1px); }
+.eden-ui-button:active:not(:disabled) { transform: translateY(1px); }
+.eden-ui-button:disabled,
+.eden-ui-button[aria-disabled="true"] { opacity: .45; cursor: not-allowed; pointer-events: none; }
+
+.eden-ui-field {
+    min-height: var(--eden-touch-target);
+    width: 100%;
+    padding: .7rem .8rem;
+    border: 1px solid var(--eden-color-border);
+    border-radius: var(--eden-radius-sm);
+    background: var(--eden-color-surface-raised);
+    color: var(--eden-color-text);
+    font: inherit;
+    transition: border-color var(--eden-motion-fast) var(--eden-ease-standard), box-shadow var(--eden-motion-fast) var(--eden-ease-standard);
+}
+.eden-ui-field:focus { border-color: var(--eden-focus); }
+.eden-ui-field:disabled { opacity: .5; cursor: not-allowed; }
+
+.eden-ui-alert {
+    padding: var(--eden-space-12) var(--eden-space-16);
+    border: 1px solid var(--eden-color-border);
+    border-left-width: 3px;
+    border-radius: var(--eden-radius-sm);
+    background: var(--eden-color-surface-raised);
+    color: var(--eden-color-text);
+    font-size: var(--eden-font-size-sm);
+    line-height: var(--eden-line-height-body);
+}
+.eden-ui-alert--success { border-left-color: var(--eden-color-success); background: var(--eden-tint-positive); }
+.eden-ui-alert--warning { border-left-color: var(--eden-color-warning); background: var(--eden-tint-warning); }
+.eden-ui-alert--danger { border-left-color: var(--eden-color-danger); background: var(--eden-tint-danger); }
+.eden-ui-alert--info { border-left-color: var(--eden-color-accent-secondary); background: var(--eden-tint-info); }
+
+.eden-ui-badge,
+.eden-ui-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--eden-space-8);
+    font-family: var(--eden-font-mono);
+    font-size: var(--eden-font-size-xs);
+    font-weight: var(--eden-font-weight-bold);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+.eden-ui-badge { padding: .35rem .5rem; border: 1px solid currentColor; border-radius: var(--eden-radius-pill); }
+.eden-ui-status::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent); }
+.eden-ui-status--success { color: var(--eden-color-success); }
+.eden-ui-status--warning { color: var(--eden-color-warning); }
+.eden-ui-status--danger { color: var(--eden-color-danger); }
+
+/* Neutral data labels may carry an arbitrary user-defined accent. The accent
+ * is never used as foreground or fill, so contrast remains theme-safe. */
+.eden-data-chip {
+    --eden-data-accent: var(--eden-color-border-strong);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--eden-space-8);
+    max-width: 100%;
+    padding: .25rem .5rem;
+    background: var(--eden-color-surface-raised);
+    color: var(--eden-color-text);
+    border: 1px solid var(--eden-color-border-strong);
+    border-radius: var(--eden-radius-sm);
+    font-size: var(--eden-font-size-sm);
+    font-weight: var(--eden-font-weight-semibold);
+    line-height: 1.2;
+}
+.eden-data-chip::before {
+    content: "";
+    width: .45rem;
+    height: .45rem;
+    flex: 0 0 auto;
+    background: var(--eden-data-accent);
+    border: 1px solid currentColor;
+    border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :where([data-eden-foundation], .eden-app-body) *,
+    :where([data-eden-foundation], .eden-app-body) *::before,
+    :where([data-eden-foundation], .eden-app-body) *::after {
+        scroll-behavior: auto !important;
+        animation-duration: var(--eden-motion-instant) !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: var(--eden-motion-instant) !important;
+    }
+}
+
+@media (forced-colors: active) {
+    .eden-ui-button,
+    .eden-ui-field,
+    .eden-ui-alert,
+    .eden-ui-badge,
+    .eden-data-chip { forced-color-adjust: auto; }
+}

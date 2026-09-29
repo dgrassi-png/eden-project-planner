@@ -1,9 +1,11 @@
 # Architecture V0
 
 ## System
-Browser -> Next.js application -> Supabase/Postgres.
+Browser -> nginx (E:DEN host) -> Next.js planner (systemd) -> planner-owned Postgres.
+Sign-in: Browser -> auth.e-den.tech (E:DEN Identity) -> planner callback -> server-side code exchange.
 
 Server-side adapters connect to Trello and optional AI providers. Provider secrets never reach browser code.
+Ecosystem conventions and open decisions: `docs/ECOSYSTEM_ALIGNMENT.md`.
 
 ## API
 Projects:

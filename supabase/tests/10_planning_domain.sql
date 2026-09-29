@@ -135,3 +135,6 @@ select test.assert(
   'RLS enabled on every table');
 
 rollback;
+
+-- Schema version marker is present and at least the expected version.
+select test.assert((select max(version) >= 3 from planner_schema_version), 'schema version marker');

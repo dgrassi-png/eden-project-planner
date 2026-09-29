@@ -115,6 +115,12 @@ export type AuditEventRow = {
   created_at: string;
 };
 
+export type SchemaVersionRow = {
+  version: number;
+  applied_at: string;
+  description: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -133,6 +139,7 @@ export type Database = {
       >;
       change_proposals: Table<ChangeProposalRow, "project_id" | "source" | "payload", "id" | "created_at">;
       audit_events: Table<AuditEventRow, "actor_type" | "action" | "entity_type", "id" | "created_at">;
+      planner_schema_version: Table<SchemaVersionRow, "version" | "description", "applied_at">;
     };
     Views: { [_ in never]: never };
     Functions: { [_ in never]: never };

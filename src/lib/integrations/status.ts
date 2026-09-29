@@ -12,22 +12,20 @@ export type IntegrationState = "configured" | "partial" | "not_configured";
 export interface IntegrationCheck {
   envVar: string;
   present: boolean;
-  /** Whether the variable is exposed to the browser bundle. */
-  public: boolean;
 }
 
 export interface IntegrationStatus {
-  id: "supabase" | "trello" | "ai";
+  id: "identity" | "supabase" | "trello" | "ai";
   name: string;
   state: IntegrationState;
   required: boolean;
   checks: IntegrationCheck[];
 }
 
-type SecretKey = Exclude<keyof ServerEnv, "AI_MUTATIONS_REQUIRE_APPROVAL">;
+type SecretKey = Exclude<keyof ServerEnv, "AI_MUTATIONS_REQUIRE_APPROVAL" | "PLANNER_AUTH_MODE" | "EDEN_IDENTITY_APP_ID">;
 
 function check(env: ServerEnv, envVar: SecretKey): IntegrationCheck {
-  return { envVar, present: env[envVar] !== undefined, public: envVar.startsWith("NEXT_PUBLIC_") };
+  return { envVar, present: env[envVar] !== undefined };
 }
 
 function stateOf(checks: IntegrationCheck[], mode: "all" | "any"): IntegrationState {
@@ -38,9 +36,13 @@ function stateOf(checks: IntegrationCheck[], mode: "all" | "any"): IntegrationSt
 }
 
 export function getIntegrationStatuses(env: ServerEnv): IntegrationStatus[] {
+  const identity = [
+    check(env, "EDEN_IDENTITY_BASE_URL"),
+    check(env, "PLANNER_PUBLIC_URL"),
+    check(env, "PLANNER_SESSION_SECRET"),
+  ];
   const supabase = [
-    check(env, "NEXT_PUBLIC_SUPABASE_URL"),
-    check(env, "NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    check(env, "SUPABASE_URL"),
     check(env, "SUPABASE_SERVICE_ROLE_KEY"),
   ];
   const trello = [
@@ -52,6 +54,7 @@ export function getIntegrationStatuses(env: ServerEnv): IntegrationStatus[] {
   const ai = [check(env, "OPENAI_API_KEY"), check(env, "ANTHROPIC_API_KEY")];
 
   return [
+    { id: "identity", name: "E:DEN Identity (SSO)", state: stateOf(identity, "all"), required: true, checks: identity },
     { id: "supabase", name: "Supabase", state: stateOf(supabase, "all"), required: true, checks: supabase },
     { id: "trello", name: "Trello", state: stateOf(trello, "all"), required: false, checks: trello },
     { id: "ai", name: "AI providers", state: stateOf(ai, "any"), required: false, checks: ai },

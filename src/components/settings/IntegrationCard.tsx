@@ -42,7 +42,7 @@ export function IntegrationCard({
             {status.checks.map((check) => (
               <tr key={check.envVar} className="border-t border-neutral-100">
                 <td className="py-1.5 font-mono text-[11px] text-neutral-800">{check.envVar}</td>
-                <td className="py-1.5 text-neutral-500">{check.public ? "browser" : "server only"}</td>
+                <td className="py-1.5 text-neutral-500">server only</td>
                 <td className="py-1.5 text-right">
                   {check.present ? <Badge tone="green">set</Badge> : <Badge tone="neutral">missing</Badge>}
                 </td>

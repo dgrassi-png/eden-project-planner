@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { PlannerErrorState } from "@/components/planner/StatusNotices";
 import { AddMemberForm } from "@/components/settings/AddMemberForm";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { requirePagePrincipal } from "@/lib/auth/server";
 import { loadProjectPage } from "@/lib/planning/pageData";
 
 export const metadata: Metadata = { title: "Team" };
@@ -11,7 +12,7 @@ export const metadata: Metadata = { title: "Team" };
 /** Project members, the people who can own tasks. */
 export default async function TeamPage({ searchParams }: PageProps<"/settings/team">) {
   await connection();
-  const page = await loadProjectPage((await searchParams).project, (service, project) => service.listMembers(project.id));
+  const page = await loadProjectPage(await requirePagePrincipal("/settings/team"), (await searchParams).project, (service, project) => service.listMembers(project.id));
   const header = <PageHeader title="Team" subtitle="People who can own planning tasks" />;
 
   if (page.status === "error") {

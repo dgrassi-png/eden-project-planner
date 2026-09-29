@@ -33,13 +33,33 @@ const approvalFlag = z.preprocess(
     .transform((value) => value === "true"),
 );
 
-export const publicEnvSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: optionalUrl,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: optionalString,
-  NEXT_PUBLIC_APP_URL: optionalUrl,
-});
+const optionalEnum = <T extends readonly [string, ...string[]]>(values: T) =>
+  z.preprocess((value) => (typeof value === "string" && value.trim() === "" ? undefined : value), z.enum(values).optional());
 
-export const serverEnvSchema = publicEnvSchema.extend({
+/**
+ * All configuration is server-side. Nothing is exposed to the browser: the
+ * database is reached only by the Next.js server (service role), and sign-in
+ * goes through E:DEN Identity, so no `NEXT_PUBLIC_*` variable is needed.
+ */
+export const serverEnvSchema = z.object({
+  /** Supabase project URL (server-only). */
+  SUPABASE_URL: optionalUrl,
+  /** "identity" (E:DEN SSO, required online) or "local-dev" (loopback only, no login). */
+  PLANNER_AUTH_MODE: optionalEnum(["identity", "local-dev"] as const),
+  /** E:DEN Identity origin, e.g. https://auth.e-den.tech (no path). */
+  EDEN_IDENTITY_BASE_URL: optionalUrl,
+  /** Application id registered in Identity (`/entry/<id>`). */
+  EDEN_IDENTITY_APP_ID: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().regex(/^[a-z][a-z0-9-]{1,31}$/).default("planner"),
+  ),
+  /** Public origin of this planner, e.g. https://planner.e-den.tech. */
+  PLANNER_PUBLIC_URL: optionalUrl,
+  /** HMAC key for planner session cookies (>= 32 characters, random). */
+  PLANNER_SESSION_SECRET: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().min(32).optional(),
+  ),
   SUPABASE_SERVICE_ROLE_KEY: optionalString,
   TRELLO_API_KEY: optionalString,
   TRELLO_API_TOKEN: optionalString,
@@ -49,7 +69,6 @@ export const serverEnvSchema = publicEnvSchema.extend({
   AI_MUTATIONS_REQUIRE_APPROVAL: approvalFlag,
 });
 
-export type PublicEnv = z.infer<typeof publicEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
 export class EnvValidationError extends Error {
@@ -67,10 +86,6 @@ function parseWith<T extends z.ZodType>(schema: T, source: Record<string, unknow
     throw new EnvValidationError(keys);
   }
   return result.data;
-}
-
-export function parsePublicEnv(source: Record<string, unknown>): PublicEnv {
-  return parseWith(publicEnvSchema, source);
 }
 
 export function parseServerEnv(source: Record<string, unknown>): ServerEnv {

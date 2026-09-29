@@ -19,7 +19,9 @@ export function FormField({ label, hint, children }: { label: string; hint?: Rea
 }
 
 const BUTTON_TONES = {
-  primary: "bg-neutral-900 text-white hover:bg-neutral-700 disabled:bg-neutral-400",
+  // Soft Mechanics: E:DEN Blue only for the primary system action, with on-accent ink.
+  primary:
+    "bg-[var(--eden-color-accent-primary)] text-[var(--eden-color-on-accent)] hover:bg-[var(--eden-color-accent-primary-ink)] hover:text-white disabled:bg-neutral-300 disabled:text-neutral-600",
   secondary: "border border-neutral-300 text-neutral-700 hover:bg-neutral-100 disabled:text-neutral-400",
   danger: "border border-red-200 text-red-700 hover:bg-red-50 disabled:text-red-300",
 } as const;

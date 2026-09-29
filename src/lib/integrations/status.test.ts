@@ -8,6 +8,7 @@ describe("getIntegrationStatuses", () => {
   it("reports everything as not configured on an empty environment", () => {
     const statuses = getIntegrationStatuses(parseServerEnv({}));
     expect(statuses.map((s) => [s.id, s.state])).toEqual([
+      ["identity", "not_configured"],
       ["supabase", "not_configured"],
       ["trello", "not_configured"],
       ["ai", "not_configured"],
@@ -27,8 +28,9 @@ describe("getIntegrationStatuses", () => {
   it("never includes secret values in its output", () => {
     const secret = "tok_very_secret_value";
     const env = parseServerEnv({
-      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: secret,
+      SUPABASE_URL: "https://example.supabase.co",
+      PLANNER_SESSION_SECRET: `${secret}${secret}`,
+      EDEN_IDENTITY_BASE_URL: "https://auth.example.test",
       SUPABASE_SERVICE_ROLE_KEY: secret,
       TRELLO_API_KEY: secret,
       TRELLO_API_TOKEN: secret,
@@ -38,5 +40,6 @@ describe("getIntegrationStatuses", () => {
     const serialized = JSON.stringify(getIntegrationStatuses(env));
     expect(serialized).not.toContain(secret);
     expect(serialized).not.toContain("example.supabase.co");
+    expect(serialized).not.toContain("auth.example.test");
   });
 });

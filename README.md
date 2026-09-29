@@ -15,7 +15,7 @@ Web-based master planning system for E:DEN.
 - Audit log
 
 ## Stack
-Next.js (App Router) + TypeScript + Tailwind + Supabase/Postgres + Vercel.
+Next.js (App Router) + TypeScript + Tailwind (on the E:DEN UI foundation) + Postgres (Supabase) + E:DEN Identity SSO. Runs on the E:DEN host (nginx + systemd).
 
 See `docs/PRODUCT_DEFINITION.md` (product source of truth), `docs/PRODUCT_SPEC.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/CLAUDE_CODE_PROMPTS.md`.
 
@@ -45,8 +45,7 @@ npx supabase status       # prints the local API URL, anon key and service_role 
 Put the printed values into `.env.local`:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>
+SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_SERVICE_ROLE_KEY=<service_role key>
 ```
 
@@ -59,13 +58,20 @@ http://127.0.0.1:54323.
 1. Create a Supabase project.
 2. Apply the migrations in `supabase/migrations/` in filename order, either
    with the SQL editor or with `supabase db push` after `supabase link`.
-3. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and
-   `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` (or in Vercel).
+3. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` (or in
+   `/etc/eden/planner-<env>.env` on the host).
 4. Open `/planner`, create the project, then add workstreams, tasks and team members.
 
-The service-role key stays on the server. RLS blocks direct access with the
-anon key. **Sign-in is not implemented yet**, so do not expose a deployment
-publicly without protection (see `docs/DECISIONS.md`, D-007).
+The service-role key stays on the server and the browser never talks to the
+database.
+
+### Sign-in and going online
+
+Sign-in goes through **E:DEN Identity** (`auth.e-den.tech`); there is no local
+login. Offline, the planner runs in `local-dev` mode (no login, loopback only).
+To go online, see `docs/ECOSYSTEM_ALIGNMENT.md` (congruence with the E:DEN
+manual, open decisions), `docs/IDENTITY_INTEGRATION.md` and
+`docs/DEPLOYMENT.md` (E:DEN host runbook, `ops/`).
 
 ## Scripts
 

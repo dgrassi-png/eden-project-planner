@@ -24,7 +24,7 @@ export interface Actor {
  * them from `request.headers`, so every write is attributed atomically.
  */
 export function createSupabaseAdminClient(actor: Actor): SupabaseClient<Database> | null {
-  const { NEXT_PUBLIC_SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: serviceRoleKey } = getServerEnv();
+  const { SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: serviceRoleKey } = getServerEnv();
   if (!url || !serviceRoleKey) return null;
 
   const headers: Record<string, string> = { "x-eden-actor-type": actor.type };

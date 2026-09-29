@@ -260,3 +260,32 @@ be read in two ways, the planner follows these interpretations:
   07 (hardening and deploy). Hardening (auth restricted to `@e-den.tech`,
   RLS policies, deployment) is still required before any public deployment
   (D-015).
+
+## D-017: Congruence with the E:DEN digital ecosystem (2026-09-29)
+
+The planner was checked against the *Manuale dell'Ecosistema Digitale*
+Rev.03–09 and the `simobarre-EDEN/eden-platform` monorepo (full report:
+`docs/ECOSYSTEM_ALIGNMENT.md`). Resulting decisions:
+
+- **Sign-in = E:DEN Identity relying party** (supersedes the Supabase Auth
+  plans in D-007 and D-015). No local login. Admission is Identity's
+  `platform_full_access` claim or an ACTIVE planner entitlement; the planner
+  never re-derives access from the email domain (ADR-R09-01/02). Offline
+  `local-dev` mode serves loopback requests only. Details:
+  `docs/IDENTITY_INTEGRATION.md`.
+- **Database is server-only**: the browser Supabase client, anon key and
+  `NEXT_PUBLIC_*` variables are removed (`SUPABASE_URL` is server-only).
+- **UI = E:DEN foundation**: `shared/eden_ui` files vendored verbatim with
+  SHA-256 provenance (TRANSITORIO until the move into the monorepo);
+  Carbon/Ice operational material; Blue/Cyan/Mint; no orange.
+- **Health/readiness**: `/healthz` (liveness, no DB) and `/readyz`
+  (configuration, Identity, DB, schema-version gate via
+  `planner_schema_version`).
+- **Ops as code** (`ops/`): hardened systemd units, nginx example, installer
+  and candidate/rollback deploy script with a preview/production guardrail;
+  `X-Eden-Deploy-Sha` release header.
+- **Hosting**: E:DEN host (nginx + systemd) is prepared as the congruent
+  target instead of Vercel. **Pending confirmation** by the product owner.
+- **Open**: database provider approval, monorepo placement, hostnames/ports,
+  Trello vs. the removed legacy `task_intelligence`, Identity registration
+  (owned by the Identity team).
