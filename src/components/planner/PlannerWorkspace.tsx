@@ -7,12 +7,22 @@ import { buildTimelineAxis, type ZoomLevel } from "@/domain/timeline/scale";
 
 import { isUnscheduled } from "./format";
 import { HEADER_HEIGHT_PX, ROW_HEIGHT_PX, TABLE_WIDTH_PX } from "./layout";
+import { NewTaskPanel } from "./NewTaskPanel";
 import { PlannerToolbar } from "./PlannerToolbar";
 import { TaskDrawer } from "./TaskDrawer";
+import { TaskEditor } from "./TaskEditor";
 import { TableHeaderCells, TaskCells, WorkstreamCells } from "./TaskTableCells";
 import { TimelineHeader } from "./TimelineHeader";
 import { TimelineOverlay } from "./TimelineOverlay";
-import type { PlannerData, TaskRow } from "./types";
+import type { PlannerData, TaskRow, WorkstreamRow } from "./types";
+import { NewWorkstreamPanel, WorkstreamPanel } from "./WorkstreamPanels";
+
+type Panel =
+  | { kind: "task"; id: string }
+  | { kind: "workstream"; id: string }
+  | { kind: "new-task"; parentTaskId: string | null }
+  | { kind: "new-workstream" }
+  | null;
 
 /**
  * Planner surface: task hierarchy on the left, date-driven timeline on the
@@ -24,13 +34,20 @@ import type { PlannerData, TaskRow } from "./types";
  */
 export function PlannerWorkspace({ data, today }: { data: PlannerData; today: IsoDate }) {
   const [zoom, setZoom] = useState<ZoomLevel>("month");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [panel, setPanel] = useState<Panel>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const editable = data.source === "database";
 
   const axis = useMemo(() => buildTimelineAxis({ today, zoom }), [today, zoom]);
   const tasks = useMemo(() => data.rows.filter((row): row is TaskRow => row.kind === "task"), [data.rows]);
-  const selectedTask = tasks.find((task) => task.id === selectedId) ?? null;
   const unscheduledCount = tasks.filter(isUnscheduled).length;
+
+  const selectedTask = panel?.kind === "task" ? (tasks.find((t) => t.id === panel.id) ?? null) : null;
+  const selectedWorkstream =
+    panel?.kind === "workstream"
+      ? (data.rows.find((r): r is WorkstreamRow => r.kind === "workstream" && r.id === panel.id) ?? null)
+      : null;
+  const selectedId = panel?.kind === "task" || panel?.kind === "workstream" ? panel.id : null;
 
   const scrollToToday = useCallback(() => {
     const scroller = scrollerRef.current;
@@ -41,7 +58,50 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
 
   useLayoutEffect(scrollToToday, [scrollToToday]);
 
-  const closeDrawer = useCallback(() => setSelectedId(null), []);
+  const closePanel = useCallback(() => setPanel(null), []);
+
+  const renderPanel = () => {
+    if (!panel) return null;
+    if (data.source === "scaffold") {
+      return selectedTask ? <TaskDrawer task={selectedTask} onClose={closePanel} /> : null;
+    }
+    switch (panel.kind) {
+      case "task":
+        return selectedTask ? (
+          <TaskEditor
+            key={`${selectedTask.id}:${selectedTask.updatedAt}`}
+            task={selectedTask}
+            data={data}
+            onClose={closePanel}
+            onAddSubtask={(parentTaskId) => setPanel({ kind: "new-task", parentTaskId })}
+          />
+        ) : null;
+      case "workstream":
+        return selectedWorkstream ? (
+          <WorkstreamPanel key={`${selectedWorkstream.id}:${selectedWorkstream.name}`} workstream={selectedWorkstream} onClose={closePanel} />
+        ) : null;
+      case "new-task":
+        return (
+          <NewTaskPanel
+            key={panel.parentTaskId ?? "top"}
+            data={data}
+            initialParentTaskId={panel.parentTaskId}
+            onClose={closePanel}
+            onCreated={(id) => setPanel({ kind: "task", id })}
+          />
+        );
+      case "new-workstream":
+        return <NewWorkstreamPanel data={data} onClose={closePanel} />;
+    }
+  };
+
+  const activate = (next: Panel) => (event: React.KeyboardEvent | React.MouseEvent) => {
+    if ("key" in event) {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+    }
+    setPanel(next);
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -50,6 +110,9 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
         onZoomChange={setZoom}
         onScrollToToday={scrollToToday}
         unscheduledCount={unscheduledCount}
+        onNewTask={editable ? () => setPanel({ kind: "new-task", parentTaskId: null }) : undefined}
+        onNewWorkstream={editable ? () => setPanel({ kind: "new-workstream" }) : undefined}
+        canCreateTask={editable && data.workstreams.length > 0}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -68,40 +131,36 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
               <TimelineOverlay axis={axis} />
             </div>
 
-            {data.rows.map((row) =>
-              row.kind === "workstream" ? (
-                <div key={row.id} className="relative flex" style={{ height: ROW_HEIGHT_PX }}>
-                  <div className="sticky left-0 z-20 shrink-0" style={{ width: TABLE_WIDTH_PX }}>
-                    <WorkstreamCells row={row} />
-                  </div>
-                  <div className="border-b border-neutral-200 bg-neutral-100/60" style={{ width: axis.totalWidthPx }} />
-                </div>
-              ) : (
+            {data.rows.map((row) => {
+              const selected = row.id === selectedId;
+              const workstream = row.kind === "workstream";
+              const interactive = !workstream || editable;
+              const target: Panel = workstream ? { kind: "workstream", id: row.id } : { kind: "task", id: row.id };
+              return (
                 <div
                   key={row.id}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={row.id === selectedId}
-                  onClick={() => setSelectedId(row.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      setSelectedId(row.id);
-                    }
-                  }}
-                  className="group relative flex cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                  role={interactive ? "button" : undefined}
+                  tabIndex={interactive ? 0 : undefined}
+                  aria-pressed={interactive ? selected : undefined}
+                  onClick={interactive ? activate(target) : undefined}
+                  onKeyDown={interactive ? activate(target) : undefined}
+                  className={`group relative flex outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${interactive ? "cursor-pointer" : ""}`}
                   style={{ height: ROW_HEIGHT_PX }}
                 >
                   <div className="sticky left-0 z-20 shrink-0" style={{ width: TABLE_WIDTH_PX }}>
-                    <TaskCells row={row} selected={row.id === selectedId} />
+                    {row.kind === "workstream" ? <WorkstreamCells row={row} /> : <TaskCells row={row} selected={selected} />}
                   </div>
                   <div
-                    className={`border-b border-neutral-100 ${row.id === selectedId ? "bg-blue-50/50" : "group-hover:bg-neutral-50/70"}`}
+                    className={
+                      workstream
+                        ? "border-b border-neutral-200 bg-neutral-100/60"
+                        : `border-b border-neutral-100 ${selected ? "bg-blue-50/50" : "group-hover:bg-neutral-50/70"}`
+                    }
                     style={{ width: axis.totalWidthPx }}
                   />
                 </div>
-              ),
-            )}
+              );
+            })}
 
             {/* Fills the remaining height so the sticky table column stays opaque below the last row */}
             <div className="flex flex-1">
@@ -109,13 +168,17 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
                 className="sticky left-0 z-20 shrink-0 border-r border-neutral-200 bg-white p-4 text-xs text-neutral-500"
                 style={{ width: TABLE_WIDTH_PX }}
               >
-                {tasks.length === 0 ? "No tasks yet." : null}
+                {data.rows.length === 0
+                  ? "No workstreams yet. Create one to start adding tasks."
+                  : tasks.length === 0
+                    ? "No tasks yet."
+                    : null}
               </div>
             </div>
           </div>
         </div>
 
-        {selectedTask ? <TaskDrawer task={selectedTask} onClose={closeDrawer} /> : null}
+        {renderPanel()}
       </div>
     </div>
   );

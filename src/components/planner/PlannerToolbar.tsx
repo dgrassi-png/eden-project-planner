@@ -9,12 +9,21 @@ export function PlannerToolbar({
   onZoomChange,
   onScrollToToday,
   unscheduledCount,
+  onNewTask,
+  onNewWorkstream,
+  canCreateTask,
 }: {
   zoom: ZoomLevel;
   onZoomChange: (zoom: ZoomLevel) => void;
   onScrollToToday: () => void;
   unscheduledCount: number;
+  /** Undefined when editing is unavailable (Supabase not configured). */
+  onNewTask?: () => void;
+  onNewWorkstream?: () => void;
+  canCreateTask: boolean;
 }) {
+  const editable = onNewTask !== undefined;
+  const disabledHint = "Configure Supabase to edit planning data";
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 bg-white px-4 py-1.5">
       <div role="group" aria-label="Timeline zoom" className="flex rounded border border-neutral-300 p-0.5">
@@ -45,16 +54,26 @@ export function PlannerToolbar({
 
       <button
         type="button"
-        disabled
-        title="Task editing arrives with the planning domain (Phase 01)"
-        className="rounded border border-neutral-200 px-2.5 py-1 text-xs text-neutral-400"
+        onClick={onNewTask}
+        disabled={!editable || !canCreateTask}
+        title={!editable ? disabledHint : !canCreateTask ? "Create a workstream first" : undefined}
+        className="rounded border border-neutral-300 px-2.5 py-1 text-xs text-neutral-700 hover:bg-neutral-100 disabled:border-neutral-200 disabled:text-neutral-400 disabled:hover:bg-transparent"
       >
         + Task
       </button>
       <button
         type="button"
+        onClick={onNewWorkstream}
+        disabled={!editable}
+        title={!editable ? disabledHint : undefined}
+        className="rounded border border-neutral-300 px-2.5 py-1 text-xs text-neutral-700 hover:bg-neutral-100 disabled:border-neutral-200 disabled:text-neutral-400 disabled:hover:bg-transparent"
+      >
+        + Workstream
+      </button>
+      <button
+        type="button"
         disabled
-        title="Trello sync preview arrives in Phase 04"
+        title="Trello sync preview arrives in a later phase"
         className="rounded border border-neutral-200 px-2.5 py-1 text-xs text-neutral-400"
       >
         Sync preview

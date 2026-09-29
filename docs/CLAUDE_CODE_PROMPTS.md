@@ -1,7 +1,7 @@
 # Claude Code — implementation sequence
 
 ## 00 — Bootstrap
-Read README.md, docs/PRODUCT_SPEC.md, docs/ARCHITECTURE.md and supabase/schema.sql first.
+Read README.md, docs/PRODUCT_SPEC.md, docs/ARCHITECTURE.md and supabase/migrations/ first.
 
 Bootstrap a production-quality Next.js App Router application with TypeScript and Tailwind. Use strict TypeScript, ESLint, src/ layout, clean server/client boundaries and environment variables. Create /planner and /settings/integrations. Do not invent E:DEN dates.
 

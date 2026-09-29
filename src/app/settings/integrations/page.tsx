@@ -56,7 +56,11 @@ export default async function IntegrationsPage() {
             status={byId(statuses, "supabase")}
             description="Postgres database and authentication. The planner database is the planning source of truth."
           >
-            <p className="text-[11px] text-neutral-500">Persistence and sign-in are wired up in Phase 01.</p>
+            <p className="text-[11px] text-neutral-500">
+              Apply <code className="font-mono">supabase/migrations</code> to the project. Planning data is read and
+              written server-side with the service-role key. The browser never talks to the database directly. Sign-in
+              is not enabled yet.
+            </p>
           </IntegrationCard>
 
           <IntegrationCard

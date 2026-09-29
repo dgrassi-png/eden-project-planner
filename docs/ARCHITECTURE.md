@@ -10,13 +10,18 @@ Projects:
 - GET /api/projects
 - GET /api/projects/:id
 
+Workstreams and members:
+- GET/POST /api/projects/:id/workstreams
+- PATCH/DELETE /api/workstreams/:id
+- GET/POST /api/projects/:id/members
+
 Tasks:
 - GET/POST /api/projects/:id/tasks
-- PATCH/DELETE /api/tasks/:id
+- GET/PATCH/DELETE /api/tasks/:id
 
 Dependencies:
 - POST /api/dependencies
-- DELETE /api/dependencies/:id
+- PATCH/DELETE /api/dependencies/:id
 
 Trello:
 - POST /api/tasks/:id/sync-trello
@@ -49,3 +54,8 @@ Agents may read, summarize, explain impact and propose. Canonical writes occur t
 
 ## Audit
 Record actor type (USER, CHATGPT, CLAUDE, SYSTEM, TRELLO_SYNC), actor ID, action, entity, before/after JSON, metadata and timestamp.
+
+## Implementation notes (Phase 01)
+- `GET /api/projects` / `POST /api/projects` list and create projects. `GET /api/projects/:id` returns a full planning snapshot.
+- Responses are `{ data }` on success, and `{ error: { kind, message, issues[] } }` with 404 / 409 / 422 / 503 on failure.
+- Database access is server-only (service role); RLS denies the anon key. See `docs/DECISIONS.md` D-007 to D-013.

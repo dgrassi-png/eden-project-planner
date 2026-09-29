@@ -24,6 +24,7 @@ export function WorkstreamCells({ row }: { row: WorkstreamRow }) {
     >
       <span className="font-mono text-[11px] text-neutral-500">{row.code}</span>
       <span className="truncate">{row.name}</span>
+      <span className="ml-auto text-[11px] font-normal text-neutral-400">{row.taskCount}</span>
     </div>
   );
 }

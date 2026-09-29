@@ -69,7 +69,8 @@ it is unaffected by DST.
 - Placeholder rows live in `src/components/planner/scaffold.ts`. They use a
   `SCAFFOLD-` code prefix, have every planning value `null`, and are flagged
   as UI scaffolding in the UI. No E:DEN codes, dates, owners or durations are
-  used before the seed phase.
+  used before the seed phase. Since Phase 01 they appear only while Supabase
+  is not configured.
 
 ## D-006 — Gantt library (pending, Phase 02)
 
@@ -79,3 +80,97 @@ maintenance status, then select one or justify a custom renderer. Constraints:
 permissive license, no paid tier needed for essential features, React 19 /
 Next.js 16 compatible. The planner shell is built so the timeline pane can be
 replaced without touching the domain or data layers.
+
+## D-007: Persistence and access model (Phase 01)
+
+**Decision.** Supabase/Postgres is the only persistence layer. No ORM or
+other database abstraction is used. Planning data is read and written
+**server-side only**, through `supabase-js` with the service-role key
+(`src/lib/planning/supabaseStore.ts`). Every table has **RLS enabled with no
+policies**, so the public anon key (shipped to browsers) can neither read
+nor write planning data.
+
+- Layering: API route / Server Component → `PlanningService` (use cases) →
+  domain rules (`src/domain`, pure) → `PlanningStore` port → Supabase store.
+  An in-memory store implements the same port for service tests only.
+- **There is no sign-in yet.** Anyone who can reach a running instance can
+  edit the plan. Do not expose a deployment publicly until Supabase Auth is
+  added: use Vercel Deployment Protection or keep it local. Writes are
+  attributed to an unidentified `USER` until then.
+- Mutating API routes reject cross-origin requests (Origin check), so the
+  API is ready for cookie-based auth.
+
+## D-008: Schema changes (Phase 01)
+
+`supabase/schema.sql` became the baseline migration
+`supabase/migrations/20260929000000_initial_schema.sql`. Phase 01 changes are
+in `20260930000000_planning_domain.sql`:
+
+- `priority`, `geography` and `progress_percent` are **nullable with no
+  default**. Unvalidated values are NULL (TBD). The previous defaults
+  (`P1`, `ANYWHERE`, `0`) would have invented planning data. `status`
+  keeps its `BACKLOG` default, because a new task is genuinely in the backlog.
+- `tasks.workstream_id` is required. A subtask is always in its parent's
+  workstream; moving a parent moves its subtasks (trigger).
+- Deleting a workstream that has tasks, or a task that has subtasks, is
+  blocked (FK `NO ACTION`); deleting a project still cascades.
+- `audit_events.project_id` no longer has a foreign key, so audit history
+  outlives what it describes. Audit events are append-only.
+- `updated_at` triggers; `created_at`/`updated_at` columns added on
+  workstreams, members and dependencies.
+
+## D-009: Permanent identifiers (Phase 01)
+
+- `eden_code` is **immutable** once created (DB trigger + API rejects it in
+  patches). Format `PREFIX-NNN` (task) or `PREFIX-NNN.N` (subtask, one
+  level). The prefix is free (`EIMA-001` can sit in any workstream).
+- A subtask's code must start with its parent's code. Because the parent is
+  encoded in the code, `parent_task_id` is immutable too.
+- Workstream `code` is immutable; name and order can change.
+- A typo in a code is fixed by deleting and recreating the task. Codes are
+  never renamed in place.
+
+## D-010: Scheduling semantics (Phase 01)
+
+- Calendar: Monday–Friday, no public holidays yet (`src/domain/planning/calendar.ts`).
+- Duration is in working days, and **the start day counts as day 1**: a
+  5-day task starting Monday finishes Friday.
+- `planned_finish` is **derived** (start + duration). It can never be set
+  directly and is NULL until both inputs are known.
+- Tasks must start on a working day (rejected otherwise, never silently
+  moved) and last at least 1 working day. Milestones have duration 0,
+  finish = start, and may fall on any calendar day (e.g. a trade fair).
+- States: *unscheduled* (no start), *partial* (start, no validated
+  duration), *scheduled*.
+- Dependencies: Finish-to-Start only, lag is a whole number of **working
+  days ≥ 0** (no negative lead in V0). No self, duplicate, parent↔child or
+  cyclic links. Cycles are checked in the domain (with a readable path) and
+  again by a DB trigger under a per-project advisory lock.
+
+## D-011: Audit through database triggers (Phase 01)
+
+Every insert, update or delete on projects, workstreams, members, tasks and
+dependencies writes an `audit_events` row **in the same transaction**, with
+before/after JSON and the changed fields. No-op updates are skipped. The
+server identifies the actor with PostgREST request headers
+(`x-eden-actor-type`, `x-eden-actor-id`). Changes made directly in SQL are
+recorded as `SYSTEM`. This covers every writer, including future Trello sync
+and AI-proposal apply jobs, without extra code paths.
+
+## D-012: Concurrent edits (Phase 01)
+
+Task edits send the `updatedAt` the editor loaded, and the update only
+applies if it still matches. Otherwise the API answers 409 `STALE_EDIT`
+instead of silently overwriting a colleague's change.
+
+## D-013: Consequences for Phase 02 (Gantt)
+
+- Bars must be positioned from `plannedStart`/`plannedFinish` through
+  `TimelineAxis`. Unscheduled and partial tasks have no bar and need an
+  explicit visual treatment.
+- Drag = PATCH `plannedStart`; resize = PATCH `plannedDurationDays`. The
+  server re-derives the finish. Drops must snap to working days, because
+  weekend starts are rejected.
+- Send `expectedUpdatedAt` with drag/resize and handle 409 by reloading.
+- Dependency arrows use `predecessors`/`successors` from the planner view
+  model. Violation warnings and cascade are Phase 03.

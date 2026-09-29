@@ -3,7 +3,7 @@
 # E:DEN Project Planner — working notes
 
 Read `docs/PRODUCT_SPEC.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` and
-`supabase/schema.sql` before changing behaviour. Phases are listed in
+`supabase/migrations/` before changing behaviour. Phases are listed in
 `docs/CLAUDE_CODE_PROMPTS.md`; do one phase at a time.
 
 Hard rules:
