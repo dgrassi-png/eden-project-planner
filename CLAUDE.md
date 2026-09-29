@@ -2,7 +2,7 @@
 
 # E:DEN Project Planner — working notes
 
-Read `docs/PRODUCT_SPEC.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` and
+Read `docs/PRODUCT_DEFINITION.md` (product source of truth), `docs/PRODUCT_SPEC.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` and
 `supabase/migrations/` before changing behaviour. Phases are listed in
 `docs/CLAUDE_CODE_PROMPTS.md`; do one phase at a time.
 

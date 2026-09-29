@@ -17,7 +17,7 @@ Web-based master planning system for E:DEN.
 ## Stack
 Next.js (App Router) + TypeScript + Tailwind + Supabase/Postgres + Vercel.
 
-See `docs/PRODUCT_SPEC.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/CLAUDE_CODE_PROMPTS.md`.
+See `docs/PRODUCT_DEFINITION.md` (product source of truth), `docs/PRODUCT_SPEC.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/CLAUDE_CODE_PROMPTS.md`.
 
 ## Getting started
 

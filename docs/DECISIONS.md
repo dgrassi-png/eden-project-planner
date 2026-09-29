@@ -240,3 +240,23 @@ Decided by the product owner:
 - When sign-in is added, it is restricted to **`@e-den.tech`** accounts
   (Supabase Auth, email domain enforced server-side and in RLS policies).
   Until then the planner must not be deployed publicly.
+
+## D-016: Reading the Master Product Definition v1.0 (2026-09-29)
+
+`docs/PRODUCT_DEFINITION.md` is the product source of truth. Where it could
+be read in two ways, the planner follows these interpretations:
+
+- **§32 "Identity: code" in the drawer.** The drawer *shows* the E code but
+  does not edit it. §4 (the code is permanent and referenced in Trello,
+  emails and AI) takes precedence. A mistyped code is fixed by deleting and
+  recreating the task before it is used elsewhere (D-009).
+- **§23 "Finish: 10 Oct → 17 Oct" in AI proposals.** Planned finish stays
+  derived (D-010). A proposal that targets a finish date is translated into
+  a duration (or start) change and previewed as such. The UI still shows
+  the finish before and after.
+- **Roadmap (§41).** Phases 00–05 match `docs/CLAUDE_CODE_PROMPTS.md`. The
+  definition's Phase 06 (population with the team), 07 (operating views) and
+  08 (Personal Assistant interface) replace the prompt file's 06 (seed) and
+  07 (hardening and deploy). Hardening (auth restricted to `@e-den.tech`,
+  RLS policies, deployment) is still required before any public deployment
+  (D-015).
