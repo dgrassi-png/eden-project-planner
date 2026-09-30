@@ -1,7 +1,7 @@
 # Deployment runbook (E:DEN host)
 
-Target (pending confirmation, see `docs/ECOSYSTEM_ALIGNMENT.md` §3): the E:DEN
-EC2 host, following the platform conventions. Next.js runs under systemd
+Target (confirmed, D-018): the E:DEN EC2 host, following the platform
+conventions. What each owner must do first is listed in `docs/HANDOFF.md`. Next.js runs under systemd
 behind nginx, with separate preview and production runtimes (manual Rev.09
 ADR-R09-04).
 
@@ -13,7 +13,7 @@ ADR-R09-04).
 | Worktree | `/home/ubuntu/workspace/eden-planner-production` | `…/eden-planner-preview` |
 | State | `/var/lib/eden/planner-production` | `/var/lib/eden/planner-preview` |
 | Database | `/var/lib/eden/planner-production/planner.sqlite3` | `/var/lib/eden/planner-preview/planner.sqlite3` |
-| Backups | `/var/backups/eden/planner-production/<stamp>/` | `/var/backups/eden/planner-preview/<stamp>/` |
+| Backups | `/var/backups/eden/planner-production/<stamp>/` (each deploy + daily timer, 14 days) | `/var/backups/eden/planner-preview/<stamp>/` (each deploy) |
 | Env (root, 0600) | `/etc/eden/planner-production.env` | `/etc/eden/planner-preview.env` |
 | Identity callback | `https://planner.e-den.tech/auth/eden/callback` | to be agreed with Identity |
 
@@ -23,6 +23,26 @@ ADR-R09-04).
 2. Nothing to provision for the database: it is a SQLite file in the state dir, created and migrated by the deploy script (backup first, see below).
 3. A TLS certificate and an nginx server block are in place for the hostnames (host-managed).
 4. Node 22 is at `/home/ubuntu/.local/node22/bin`, the same path the website uses.
+5. Outbound HTTPS from the host is allowed to `auth.e-den.tech` (code exchange), `api.trello.com` (sync) and, only if server-side drafting is enabled, `api.anthropic.com` / `api.openai.com`.
+
+## Environment file (`/etc/eden/planner-<env>.env`, root 0600)
+
+| Variable | Required | Notes |
+|---|---|---|
+| `PLANNER_AUTH_MODE` | yes | `identity` |
+| `EDEN_IDENTITY_BASE_URL` | yes | `https://auth.e-den.tech` |
+| `EDEN_IDENTITY_APP_ID` | yes | `planner` |
+| `PLANNER_PUBLIC_URL` | yes | `https://planner.e-den.tech` (preview: its own hostname) |
+| `PLANNER_SESSION_SECRET` | yes | `openssl rand -base64 48`, different per environment |
+| `TRELLO_API_KEY`, `TRELLO_API_TOKEN` | for Trello | dedicated E:DEN service account on the board, token scope read,write |
+| `TRELLO_BOARD_ID` | for Trello | `9n93W4ym` (https://trello.com/b/9n93W4ym/eden) |
+| `PLANNER_AGENT_TOKENS` | for agents | `CLAUDE:<sha256>,CHATGPT:<sha256>,ASSISTANT:<sha256>` from `node scripts/agent-token.mjs <NAME>` |
+| `ANTHROPIC_API_KEY` (+ `ANTHROPIC_MODEL`) | optional | server-side drafting with Claude (default model `claude-opus-5-5`) |
+| `OPENAI_API_KEY` + `OPENAI_MODEL` | optional | server-side drafting with ChatGPT (no default model) |
+| `AI_MUTATIONS_REQUIRE_APPROVAL` | keep `true` | V0 has no auto-apply path anyway |
+
+`PLANNER_DATABASE_PATH` is set by the systemd unit, never in the env file.
+`TRELLO_API_BASE_URL` is for offline tests only and must stay unset.
 
 ## One-time setup
 
@@ -62,13 +82,20 @@ Rollback: `ops/deploy/planner-deploy.sh rollback <env> [--confirm-production]`.
 - An anonymous request to `/planner` redirects (307) to `/auth/eden/start`.
 - An anonymous request to `/api/projects` returns 401.
 - Signing in with an `@e-den.tech` account through Identity lands on `/planner`.
+- `/settings/integrations` shows Identity, database and (if configured) Trello and AI as configured.
+- With an agent token: `curl -H "Authorization: Bearer <token>" https://planner.e-den.tech/api/projects` returns 200,
+  and the same token on `/api/tasks/<id>` returns 401/403.
+- Settings → Trello reads the board; "Trello sync…" in the planner shows a dry-run (confirm only when it looks right).
 
 ## Database backups and restore
 
 - Format identical to the E:DEN `ops/backup/backup_sqlite.py`: online backup, `quick_check`, gzip -9, SHA-256 manifest, 0600/0700, atomic publish, retention.
-- Every deploy takes a backup before migrating. For a daily backup, add a timer that runs:
-  `node scripts/db.mjs backup --database /var/lib/eden/planner-production/planner.sqlite3 --destination /var/backups/eden --product planner-production --retention-days 7`
-  (as for `eden-sqlite-backup@budget`; the planner can use that template once it lives in the monorepo).
+- Every deploy takes a backup before migrating.
+- Production also has a daily backup: `eden-planner-backup-production.timer` (02:40 Europe/Rome, 14 days retention),
+  installed and enabled by `install-planner-runtime.sh production`. Check it with
+  `systemctl list-timers eden-planner-backup-production.timer` and `journalctl -u eden-planner-backup-production`.
+  Once the planner lives in the monorepo, `eden-sqlite-backup@` can replace it.
+- Off-host copies (S3) follow the platform backup policy; the manifest carries the `s3_ready_key_prefix`.
 - Restore (to an isolated path first):
   1. Verify the archive SHA-256 against `manifest.json`.
   2. `gunzip -c planner-production.sqlite3.gz > restored.sqlite3`.

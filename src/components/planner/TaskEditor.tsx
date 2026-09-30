@@ -24,6 +24,7 @@ import { DependencyEditor } from "./DependencyEditor";
 import { ConflictSection } from "./impact/ConflictSection";
 import { useImpactCheckedSave } from "./impact/useImpactCheckedSave";
 import { SidePanel } from "./SidePanel";
+import { TaskHistory } from "./TaskHistory";
 import type { DatabasePlannerData, TaskRow } from "./types";
 
 const WHOLE_NUMBER = /^\d+$/;
@@ -297,6 +298,8 @@ export function TaskEditor({
         state={task.trelloSyncStatus}
         lastError={task.trelloLastError}
       />
+
+      <TaskHistory taskId={task.id} version={task.updatedAt} />
 
       <div className="border-t border-neutral-100 pt-3">
         <FormError message={remove.error?.message ?? null} issues={remove.error?.issues} />

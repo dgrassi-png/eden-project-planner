@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { hostnameFromHostHeader, isLoopbackHost, resolveAuthConfig } from "./auth";
+import { hostnameFromHostHeader, isBackgroundRequest, isLoopbackHost, resolveAuthConfig } from "./auth";
 import { parseServerEnv } from "./env.schema";
 
 const secret = "x".repeat(40);
@@ -76,5 +76,15 @@ describe("host parsing", () => {
   ])("%s -> %s (loopback: %s)", (header, hostname, loopback) => {
     expect(hostnameFromHostHeader(header)).toBe(hostname);
     expect(isLoopbackHost(hostnameFromHostHeader(header))).toBe(loopback);
+  });
+});
+
+describe("isBackgroundRequest", () => {
+  it("recognises router prefetches and RSC fetches, not navigations", () => {
+    const none = new URLSearchParams();
+    expect(isBackgroundRequest(new Headers({ "next-router-prefetch": "1" }), none)).toBe(true);
+    expect(isBackgroundRequest(new Headers({ rsc: "1" }), none)).toBe(true);
+    expect(isBackgroundRequest(new Headers(), new URLSearchParams("_rsc=abc"))).toBe(true);
+    expect(isBackgroundRequest(new Headers({ accept: "text/html" }), none)).toBe(false);
   });
 });

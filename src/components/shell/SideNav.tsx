@@ -15,6 +15,7 @@ export function SideNav({ orientation }: { orientation: "vertical" | "horizontal
         const active = isNavItemActive(pathname, item.href);
         return (
           <Link
+            prefetch={false}
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}

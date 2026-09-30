@@ -81,3 +81,18 @@ export function resolveAuthConfig(env: ServerEnv, nodeEnv: string | undefined): 
     secureCookies: publicUrl.protocol === "https:",
   };
 }
+
+/**
+ * True for requests the Next.js router makes in the background (prefetch or
+ * RSC payload fetches). These must never start a sign-in: each one would ask
+ * Identity for a new one-time code.
+ */
+export function isBackgroundRequest(headers: Headers, searchParams: URLSearchParams): boolean {
+  return (
+    headers.get("next-router-prefetch") === "1" ||
+    headers.get("purpose") === "prefetch" ||
+    headers.get("sec-purpose")?.includes("prefetch") === true ||
+    headers.get("rsc") === "1" ||
+    searchParams.has("_rsc")
+  );
+}

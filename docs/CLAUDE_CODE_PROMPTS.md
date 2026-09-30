@@ -1,5 +1,7 @@
 # Claude Code — implementation sequence
 
+Status (2026-09-30): phases 00–07 are implemented (decisions D-001 … D-024). Remaining work is outside the code: see `docs/HANDOFF.md`.
+
 ## 00 — Bootstrap
 Read README.md, docs/PRODUCT_SPEC.md, docs/ARCHITECTURE.md and db/migrations/ first.
 

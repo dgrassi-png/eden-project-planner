@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { hostnameFromHostHeader, isLoopbackHost, resolveAuthConfig, type AuthConfig } from "@/config/auth";
+import { hostnameFromHostHeader, isBackgroundRequest, isLoopbackHost, resolveAuthConfig, type AuthConfig } from "@/config/auth";
 import { parseServerEnv } from "@/config/env.schema";
 import { isAgentPath } from "@/lib/auth/agents";
 import { readSession, sessionCookieName } from "@/lib/auth/session";
@@ -40,6 +40,8 @@ export async function proxy(request: NextRequest) {
   const principal = await readSession(config, request.cookies.get(sessionCookieName(config))?.value);
   if (principal) return NextResponse.next();
   if (isApi) return deny(401, "Sign in with E:DEN Identity");
+  // Background router fetches get a plain 401 (the router then falls back to a full navigation).
+  if (isBackgroundRequest(request.headers, request.nextUrl.searchParams)) return deny(401, "Sign in with E:DEN Identity");
 
   const next = `${request.nextUrl.pathname}${request.nextUrl.search}`;
   return NextResponse.redirect(`${config.publicOrigin}/auth/eden/start?next=${encodeURIComponent(next)}`);

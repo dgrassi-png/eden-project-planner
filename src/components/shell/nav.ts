@@ -5,7 +5,9 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/planner", label: "Planner" },
+  { href: "/review", label: "Weekly review" },
   { href: "/proposals", label: "Proposals" },
+  { href: "/history", label: "History" },
   { href: "/settings/team", label: "Team" },
   { href: "/settings/trello", label: "Trello" },
   { href: "/settings/integrations", label: "Integrations" },

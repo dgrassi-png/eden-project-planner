@@ -27,10 +27,13 @@ const nextConfig: NextConfig = {
   distDir: process.env.EDEN_NEXT_DIST_DIR || ".next",
   env: { EDEN_DEPLOY_SHA: deploySha },
   async headers() {
-    const headers = [...securityHeaders];
+    const headers = securityHeaders.map((header) => ({ ...header }));
     // HSTS only when served over https in production (nginx terminates TLS).
     if (process.env.NODE_ENV === "production") {
       headers.push({ key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" });
+      // The browser only ever talks to the planner itself (Trello and AI calls are server-side).
+      const csp = headers.find((h) => h.key === "Content-Security-Policy");
+      if (csp) csp.value = `${csp.value}; connect-src 'self'; img-src 'self' data:`;
     }
     return [{ source: "/:path*", headers }];
   },

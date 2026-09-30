@@ -21,8 +21,10 @@ export class TrelloError extends Error {
 }
 
 const trelloId = z.string().regex(/^[0-9a-fA-F]{24}$/);
+/** URLs are rendered as links in the planner: only https://trello.com/… is accepted. */
+const trelloUrl = z.string().max(2_048).regex(/^https:\/\/trello\.com\/[A-Za-z0-9/_.~%-]*$/);
 
-const boardSchema = z.object({ id: trelloId, name: z.string(), url: z.string(), closed: z.boolean().optional() });
+const boardSchema = z.object({ id: trelloId, name: z.string().max(512), url: trelloUrl, closed: z.boolean().optional() });
 const listSchema = z.object({ id: trelloId, name: z.string(), closed: z.boolean().optional() });
 const labelSchema = z.object({ id: trelloId, name: z.string().nullable().optional(), color: z.string().nullable().optional() });
 const memberSchema = z.object({ id: trelloId, fullName: z.string().nullable().optional(), username: z.string() });
@@ -30,13 +32,13 @@ const checkItemSchema = z.object({ id: trelloId, name: z.string(), state: z.enum
 const checklistSchema = z.object({ id: trelloId, name: z.string(), checkItems: z.array(checkItemSchema).default([]) });
 const cardSchema = z.object({
   id: trelloId,
-  url: z.string(),
+  url: trelloUrl,
   desc: z.string().default(""),
   closed: z.boolean().default(false),
   idBoard: trelloId,
   checklists: z.array(checklistSchema).default([]),
 });
-const createdSchema = z.object({ id: trelloId, url: z.string().optional() });
+const createdSchema = z.object({ id: trelloId, url: trelloUrl.optional() });
 
 export type TrelloList = z.infer<typeof listSchema>;
 export type TrelloLabel = z.infer<typeof labelSchema>;

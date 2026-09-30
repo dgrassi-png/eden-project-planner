@@ -26,7 +26,14 @@ if [[ ! -f "$envfile" ]]; then
 fi
 
 install -o root -g root -m 0644 "$here/ops/systemd/$unit" "/etc/systemd/system/$unit"
+if [[ "$environment" == production ]]; then
+  # Daily database backup (preview data is disposable and backed up by each deploy only).
+  for file in eden-planner-backup-production.service eden-planner-backup-production.timer; do
+    install -o root -g root -m 0644 "$here/ops/systemd/$file" "/etc/systemd/system/$file"
+  done
+fi
 systemctl daemon-reload
 systemctl enable "$unit"
+if [[ "$environment" == production ]]; then systemctl enable --now eden-planner-backup-production.timer; fi
 echo "Installed $unit. Next: fill $envfile, add the nginx server block (ops/nginx/planner.conf.example),"
 echo "then deploy with: ops/deploy/planner-deploy.sh deploy $environment <sha>"

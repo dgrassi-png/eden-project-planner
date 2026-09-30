@@ -1,0 +1,20 @@
+# Daily backup of the production planner database (E:DEN backup format:
+# online backup, quick_check, gzip, SHA-256 manifest, retention).
+# Triggered by eden-planner-backup-production.timer; installed by
+# ops/deploy/install-planner-runtime.sh production.
+[Unit]
+Description=E:DEN Planner database backup (production)
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+UMask=0077
+WorkingDirectory=/home/ubuntu/workspace/eden-planner-production
+Environment=PATH=/home/ubuntu/.local/node22/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/ubuntu/.local/node22/bin/node scripts/db.mjs backup --database /var/lib/eden/planner-production/planner.sqlite3 --destination /var/backups/eden --product planner-production --retention-days 14
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/eden/planner-production /var/backups/eden/planner-production

@@ -11,6 +11,7 @@ const production = read("ops/systemd/eden-planner-production.service");
 const preview = read("ops/systemd/eden-planner-preview.service");
 const nginx = read("ops/nginx/planner.conf.example");
 const deploy = read("ops/deploy/planner-deploy.sh");
+const backup = read("ops/systemd/eden-planner-backup-production.service");
 
 describe("preview/production boundary", () => {
   it("binds each unit to its own loopback port", () => {
@@ -45,6 +46,13 @@ describe("preview/production boundary", () => {
   it("backs up the database before migrating", () => {
     expect(deploy.indexOf("scripts/db.mjs backup")).toBeGreaterThan(0);
     expect(deploy.indexOf("scripts/db.mjs backup")).toBeLessThan(deploy.indexOf("scripts/db.mjs migrate --database \"$database\" \\"));
+  });
+
+  it("backs up only production data into the production backup dir, daily", () => {
+    expect(backup).toContain("--database /var/lib/eden/planner-production/planner.sqlite3");
+    expect(backup).toContain("--product planner-production");
+    expect(backup).not.toMatch(/planner-preview/);
+    expect(read("ops/systemd/eden-planner-backup-production.timer")).toContain("OnCalendar=");
   });
 
   it("requires explicit confirmation for production deploys", () => {

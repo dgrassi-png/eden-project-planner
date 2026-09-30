@@ -20,7 +20,8 @@ export default async function PlannerPage({ searchParams }: PageProps<"/planner"
   const today = todayInTimeZone(PLANNING_TIME_ZONE);
   const todayLabel = `Today ${today} (${PLANNING_TIME_ZONE})`;
 
-  const page = await loadProjectPage(await requirePagePrincipal("/planner"), (await searchParams).project, async (service, project) =>
+  const query = await searchParams;
+  const page = await loadProjectPage(await requirePagePrincipal("/planner"), query.project, async (service, project) =>
     toPlannerData(await service.getSnapshot(project.id)),
   );
 
@@ -61,7 +62,7 @@ export default async function PlannerPage({ searchParams }: PageProps<"/planner"
               ) : undefined
             }
           />
-          <PlannerWorkspace data={page.data} today={today} />
+          <PlannerWorkspace data={page.data} today={today} initialTaskId={typeof query.task === "string" ? query.task : null} />
         </>
       );
   }

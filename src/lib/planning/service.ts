@@ -22,7 +22,9 @@ import {
   type CascadePlan,
   type DependencyCheck,
 } from "@/domain/planning/scheduling";
-import type { Member, PlanningSnapshot, Project, Task, TaskDependency, Workstream } from "@/domain/planning/types";
+import { buildPlanningConstraints, type PlanningConstraints } from "@/domain/planning/assistantFeed";
+import { buildWeeklyReview, type WeeklyReview } from "@/domain/planning/review";
+import type { AuditEvent, Member, PlanningSnapshot, Project, Task, TaskDependency, Workstream } from "@/domain/planning/types";
 import type { Result } from "@/domain/result";
 
 import { PlanningError } from "./errors";
@@ -281,6 +283,34 @@ export class PlanningService {
     const current = await this.store.getDependency(id);
     if (!current) throw PlanningError.notFound("Dependency");
     await this.store.deleteDependency(id);
+  }
+
+  // Operating views -----------------------------------------------------------
+
+  /** Audit history of a project (optionally one entity), newest first. */
+  async history(projectId: string, filter: { entityId?: string; since?: string; limit?: number } = {}): Promise<AuditEvent[]> {
+    await this.requireProject(projectId);
+    return this.store.listAuditEvents({ projectId, ...filter, limit: Math.min(filter.limit ?? 200, 1_000) });
+  }
+
+  async taskHistory(taskId: string): Promise<AuditEvent[]> {
+    const task = await this.getTask(taskId);
+    return this.store.listAuditEvents({ projectId: task.projectId, entityId: taskId, limit: 50 });
+  }
+
+  async weeklyReview(projectId: string, today: string): Promise<WeeklyReview> {
+    const snapshot = await this.getSnapshot(projectId);
+    const since = new Date(Date.parse(`${today}T00:00:00Z`) - 8 * 86_400_000).toISOString();
+    const [checks, audit] = await Promise.all([
+      this.scheduleChecks(projectId),
+      this.store.listAuditEvents({ projectId, since, limit: 5_000 }),
+    ]);
+    return buildWeeklyReview({ snapshot, checks, audit, today });
+  }
+
+  async planningConstraints(projectId: string, owner?: string): Promise<PlanningConstraints> {
+    const snapshot = await this.getSnapshot(projectId);
+    return buildPlanningConstraints(snapshot, await this.scheduleChecks(projectId), { owner, now: new Date().toISOString() });
   }
 }
 

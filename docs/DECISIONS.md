@@ -490,3 +490,47 @@ API and the Gantt.
 - **Team validation.** Validating the plan with the team (owners, durations,
   dependencies, deadlines, subtasks) is Phase 06 of the Product Definition and
   is done in the planner itself, or as AI proposals reviewed by a person.
+
+## D-024: Operating views, Personal Assistant feed and hardening (Phase 07)
+
+- **Weekly review** (`/review`, `src/domain/planning/review.ts`, Product
+  Definition §15, §29, §30). The page lists: P0 blocked, slipping (finish
+  passed, start passed but not started, finish after deadline, deadline
+  passed), blocked, milestones in the next 90 days or unscheduled (at risk if
+  an incoming constraint is violated or a predecessor slips), upcoming (next 14
+  days), in progress, completed this week (from the audit log), waiting for a
+  decision, new this week, dependency conflicts, and data quality (no owner, no
+  duration, no schedule). There is no health score: every entry has an
+  objective reason.
+- **Filters and search** on the planner (§31): search by code, title or
+  description, and filter by owner, workstream, status, priority, geography,
+  schedule state, milestones, blocked or conflicts. The parent of a matching
+  subtask stays visible for context. The Gantt still shows real dates.
+- **History.** `/history` is the project change log, and the task panel shows
+  the task's own history. Both are read from the append-only audit log and
+  show the path of each change (manual, cascade, proposal, Trello sync).
+  `/planner?task=<id>` opens a task directly (links from the review).
+- **Personal Assistant** (§26, definition Phase 08):
+  `GET /api/projects/:id/planning-constraints[?owner=Name]` returns open work
+  with owner, duration, deadline, priority, geography, splittable, planned
+  dates, dependencies, what it still waits on, and a `ready` flag. It can be
+  read with an `ASSISTANT` token (read-only). The planner gives constraints;
+  it does not schedule calendars.
+- **Hardening.**
+  - Trello URLs are accepted only as `https://trello.com/…` before being
+    rendered as links.
+  - Production CSP adds `connect-src 'self'; img-src 'self' data:`, since the
+    browser only talks to the planner.
+  - Person-only routes refuse Bearer tokens in every mode.
+  - A daily production backup timer is added
+    (`eden-planner-backup-production.timer`, 02:40 Europe/Rome, 14 days
+    retention).
+  - Background router requests (prefetch and RSC fetches) from a signed-out
+    browser get a plain 401 from the proxy, and `/auth/eden/start` answers
+    them with 204. Before this, every prefetched sidebar link started a
+    sign-in and asked Identity for a one-time code. Sidebar links are no
+    longer prefetched.
+  - Reviewed by hand: every SQL statement uses parameters (column names come
+    only from code constants); request bodies are size-bounded and validated by
+    strict zod schemas; React escapes all rendered text; secrets stay in
+    `env.server.ts`.

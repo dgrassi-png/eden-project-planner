@@ -9,6 +9,8 @@ import { previewDates, type GanttTaskDates } from "@/domain/timeline/gantt";
 import { buildTimelineAxis, rangeForDates, type ZoomLevel } from "@/domain/timeline/scale";
 
 import { isUnscheduled } from "./format";
+import { FilterBar } from "./FilterBar";
+import { filterRows, NO_FILTERS, type PlannerFilters } from "./filters";
 import { GanttLayer, type DateChange } from "./gantt/GanttLayer";
 import { useImpactCheckedSave } from "./impact/useImpactCheckedSave";
 import { HEADER_HEIGHT_PX, ROW_HEIGHT_PX, TABLE_WIDTH_PX } from "./layout";
@@ -56,11 +58,13 @@ function describeChange(row: TaskRow, dates: GanttTaskDates): string {
  * validates and stores it, then the page re-reads planning data. Moving a task
  * never moves other tasks.
  */
-export function PlannerWorkspace({ data, today }: { data: PlannerData; today: IsoDate }) {
+export function PlannerWorkspace({ data, today, initialTaskId = null }: { data: PlannerData; today: IsoDate; initialTaskId?: string | null }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [zoom, setZoom] = useState<ZoomLevel>("month");
-  const [panel, setPanel] = useState<Panel>(null);
+  const [panel, setPanel] = useState<Panel>(() =>
+    initialTaskId && data.rows.some((r) => r.kind === "task" && r.id === initialTaskId) ? { kind: "task", id: initialTaskId } : null,
+  );
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [pending, setPending] = useState<ReadonlyMap<string, PendingSave>>(new Map());
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -75,7 +79,9 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
     return buildTimelineAxis({ today, zoom, range: rangeForDates(today, zoom, dates) });
   }, [today, zoom, datesKey]);
 
-  const rows = useMemo(() => visibleRows(data.rows, collapsed), [data.rows, collapsed]);
+  const [filters, setFilters] = useState<PlannerFilters>(NO_FILTERS);
+  const filteredRows = useMemo(() => filterRows(data.rows, filters), [data.rows, filters]);
+  const rows = useMemo(() => visibleRows(filteredRows, collapsed), [filteredRows, collapsed]);
   const spans = useMemo(() => workstreamSpans(data.rows), [data.rows]);
   const unscheduled = tasks.filter(isUnscheduled);
 
@@ -162,7 +168,7 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
     if (task.parentTaskId) nextCollapsed.delete(task.parentTaskId);
     setCollapsed(nextCollapsed);
     setPanel({ kind: "task", id: taskId });
-    const index = visibleRows(data.rows, nextCollapsed).findIndex((r) => r.id === taskId);
+    const index = visibleRows(filteredRows, nextCollapsed).findIndex((r) => r.id === taskId);
     requestAnimationFrame(() => {
       const scroller = scrollerRef.current;
       if (scroller && index >= 0) scroller.scrollTop = Math.max(0, index * ROW_HEIGHT_PX - scroller.clientHeight / 3);
@@ -232,6 +238,17 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
         onSyncPreview={editable ? () => setPanel({ kind: "trello-sync" }) : undefined}
         canCreateTask={editable && data.workstreams.length > 0}
       />
+
+      {data.source === "database" ? (
+        <FilterBar
+          filters={filters}
+          onChange={setFilters}
+          members={data.members}
+          workstreams={data.workstreams}
+          shown={filteredRows.filter((r) => r.kind === "task").length}
+          total={tasks.length}
+        />
+      ) : null}
 
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
