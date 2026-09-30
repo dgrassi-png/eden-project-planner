@@ -30,6 +30,9 @@ const row: TaskRow = {
   trello_card_id: null,
   trello_card_url: null,
   trello_sync_status: "NOT_SYNCED",
+  trello_synced_hash: null,
+  trello_synced_at: null,
+  trello_last_error: null,
   created_at: "2026-09-29T10:00:00.000Z",
   updated_at: "2026-09-29T10:00:00.000Z",
 };

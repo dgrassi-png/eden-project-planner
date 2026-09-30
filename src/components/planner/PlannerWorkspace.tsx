@@ -14,6 +14,8 @@ import { useImpactCheckedSave } from "./impact/useImpactCheckedSave";
 import { HEADER_HEIGHT_PX, ROW_HEIGHT_PX, TABLE_WIDTH_PX } from "./layout";
 import { NewTaskPanel } from "./NewTaskPanel";
 import { NoticeBar, type Notice } from "./NoticeBar";
+import { SidePanel } from "./SidePanel";
+import { SyncPreview } from "@/components/trello/SyncPreview";
 import { PlannerToolbar } from "./PlannerToolbar";
 import { TaskDrawer } from "./TaskDrawer";
 import { TaskEditor } from "./TaskEditor";
@@ -30,6 +32,7 @@ type Panel =
   | { kind: "workstream"; id: string }
   | { kind: "new-task"; parentTaskId: string | null }
   | { kind: "new-workstream" }
+  | { kind: "trello-sync" }
   | null;
 
 interface PendingSave {
@@ -198,6 +201,12 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
         );
       case "new-workstream":
         return <NewWorkstreamPanel data={data} onClose={closePanel} />;
+      case "trello-sync":
+        return (
+          <SidePanel eyebrow="Planner → Trello" title="Sync preview" onClose={closePanel}>
+            <SyncPreview previewUrl={`/api/projects/${data.project.id}/trello-sync-status`} syncUrl={`/api/projects/${data.project.id}/sync-trello`} />
+          </SidePanel>
+        );
     }
   };
 
@@ -220,6 +229,7 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
         unscheduledCount={unscheduled.length}
         onNewTask={editable ? () => setPanel({ kind: "new-task", parentTaskId: null }) : undefined}
         onNewWorkstream={editable ? () => setPanel({ kind: "new-workstream" }) : undefined}
+        onSyncPreview={editable ? () => setPanel({ kind: "trello-sync" }) : undefined}
         canCreateTask={editable && data.workstreams.length > 0}
       />
 

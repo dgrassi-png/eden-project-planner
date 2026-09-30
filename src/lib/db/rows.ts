@@ -58,6 +58,21 @@ export interface TaskRow {
   trello_card_id: string | null;
   trello_card_url: string | null;
   trello_sync_status: string;
+  trello_synced_hash: string | null;
+  trello_synced_at: string | null;
+  trello_last_error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TrelloSettingsRow {
+  project_id: string;
+  board_id: string;
+  board_name: string | null;
+  board_url: string | null;
+  subtask_mode: string;
+  status_lists: string;
+  workstream_labels: string;
   created_at: string;
   updated_at: string;
 }

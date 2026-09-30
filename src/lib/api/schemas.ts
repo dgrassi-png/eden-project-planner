@@ -101,3 +101,21 @@ export const createDependencySchema = z.strictObject({
 export const updateDependencySchema = z.strictObject({
   lagDays: z.number().int(),
 });
+
+// Trello (Phase 04) ------------------------------------------------------------
+
+const trelloId = z.string().regex(/^[0-9a-fA-F]{24}$/, "Expected a Trello id");
+
+export const trelloSettingsSchema = z.strictObject({
+  subtaskMode: z.enum(["CHECKLIST", "CARD"]),
+  statusLists: z.partialRecord(z.enum(TASK_STATUSES), trelloId.or(z.literal(""))),
+  workstreamLabels: z.record(id, trelloId.or(z.literal(""))),
+});
+
+export const memberTrelloSchema = z.strictObject({ trelloMemberId: trelloId.nullable() });
+
+export const syncConfirmationSchema = z.strictObject({
+  items: z
+    .array(z.strictObject({ taskId: id, action: z.enum(["create", "update", "unchanged", "error", "skip"]) }))
+    .max(5_000),
+});

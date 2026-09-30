@@ -11,6 +11,7 @@ export function PlannerToolbar({
   unscheduledCount,
   onNewTask,
   onNewWorkstream,
+  onSyncPreview,
   canCreateTask,
 }: {
   zoom: ZoomLevel;
@@ -20,6 +21,7 @@ export function PlannerToolbar({
   /** Undefined when editing is unavailable (read-only data). */
   onNewTask?: () => void;
   onNewWorkstream?: () => void;
+  onSyncPreview?: () => void;
   canCreateTask: boolean;
 }) {
   const editable = onNewTask !== undefined;
@@ -72,11 +74,12 @@ export function PlannerToolbar({
       </button>
       <button
         type="button"
-        disabled
-        title="Trello sync preview arrives in a later phase"
-        className="rounded border border-neutral-200 px-2.5 py-1 text-xs text-neutral-400"
+        onClick={onSyncPreview}
+        disabled={!onSyncPreview}
+        title="Dry-run of the Planner → Trello sync, then confirm"
+        className="rounded border border-neutral-300 px-2.5 py-1 text-xs text-neutral-700 hover:bg-neutral-100 disabled:border-neutral-200 disabled:text-neutral-400 disabled:hover:bg-transparent"
       >
-        Sync preview
+        Trello sync…
       </button>
 
       <span className="ml-auto text-xs text-neutral-500">

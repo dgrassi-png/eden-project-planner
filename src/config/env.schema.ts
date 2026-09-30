@@ -67,7 +67,10 @@ export const serverEnvSchema = z.object({
   ),
   TRELLO_API_KEY: optionalString,
   TRELLO_API_TOKEN: optionalString,
+  /** Board id or short link, e.g. 9n93W4ym for https://trello.com/b/9n93W4ym/eden. */
   TRELLO_BOARD_ID: optionalString,
+  /** Test/offline override of the Trello API origin. Refused in production. */
+  TRELLO_API_BASE_URL: optionalUrl,
   OPENAI_API_KEY: optionalString,
   ANTHROPIC_API_KEY: optionalString,
   AI_MUTATIONS_REQUIRE_APPROVAL: approvalFlag,

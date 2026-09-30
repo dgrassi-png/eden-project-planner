@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 
 import { IntegrationCard } from "@/components/settings/IntegrationCard";
@@ -88,7 +89,13 @@ export default async function IntegrationsPage() {
               </>
             }
           >
-            <p className="text-[11px] text-neutral-500">Sync is not implemented yet (Phase 04).</p>
+            <p className="text-[11px] text-neutral-500">
+              Map lists, labels and people in{" "}
+              <Link href="/settings/trello" className="text-blue-700 hover:underline">
+                Settings → Trello
+              </Link>
+              , then use “Trello sync…” in the Planner (dry-run, then confirm).
+            </p>
           </IntegrationCard>
 
           <IntegrationCard

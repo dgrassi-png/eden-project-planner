@@ -68,6 +68,7 @@ export interface TaskRow {
   successors: DependencyLink[];
   trelloCardUrl: string | null;
   trelloSyncStatus: TrelloSyncState | null;
+  trelloLastError: string | null;
   /** Version token for optimistic concurrency (null for scaffold rows). */
   updatedAt: string | null;
 }

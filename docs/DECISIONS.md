@@ -384,3 +384,48 @@ API and the Gantt.
   §27). Unknown stays NULL.
 - The in-memory test store was removed: every service test runs on a real
   in-memory SQLite database with the production migrations.
+
+## D-021: Controlled Planner → Trello sync (Phase 04)
+
+- **One way.** The planner writes cards; it never reads Trello back into the
+  plan. The only reads are the board's lists, labels and members (for the
+  mapping screen) and the board's cards, to find the card a task is linked to
+  and to adopt a card that an interrupted run already created.
+- **Mapping** (`trello_settings`, migration 0003, Settings → Trello): status →
+  list, workstream → label, person → Trello member (`members.trello_member_id`),
+  and subtasks either as checklist items on the parent card (default) or as
+  their own cards. Every id is picked from what the Trello API returns for the
+  board and is re-validated on save; nothing is guessed. A status without a
+  list is a mapping error (the card is not written). A missing label or member
+  is a warning (the card is written without it).
+- **Card content.** Title `[TEC-001] Title`, due = planned finish at 12:00 UTC
+  (same calendar day in every European time zone; cleared when the finish is
+  TBD), `dueComplete` when DONE, and a compact description (workstream, owner,
+  plan, deadline, priority, location, predecessors, blocker, waiting for,
+  description). It ends with `EDEN_CODE:<code>` and `EDEN_PLANNER_ID:<uuid>`.
+  Unknown values appear as TBD. Edits made on the card in Trello are
+  overwritten by the next sync.
+- **Idempotency.** A linked card (`trello_card_id`, unique) is always updated,
+  never recreated. Without a link, a card whose description carries the task's
+  `EDEN_PLANNER_ID` is adopted. The link is stored as soon as the card is
+  written, before the checklist, so a later failure cannot lose it. Checklist
+  items are reconciled by E:DEN code, and items people added by hand are kept.
+  A SHA-256 fingerprint of the last content sent marks unchanged cards, and
+  any planning edit marks a synced task `OUT_OF_SYNC`.
+- **Previewed = applied.** The project sync (and the single-task sync) always
+  starts with a dry-run ("12 unchanged · 3 will be updated · 2 will be created
+  · 1 mapping error"). Confirming sends the previewed items back, and the
+  server refuses with 409 `SYNC_PLAN_CHANGED` if the plan has changed. Items
+  are independent: a failure is recorded on the task (`SYNC_ERROR`, readable
+  message) and the rest continue.
+- **Security.** The key and token stay on the server (`TRELLO_*` in the
+  environment file). They are sent in the `Authorization: OAuth …` header,
+  never in URLs, and every Trello response is validated with zod.
+  `TRELLO_API_BASE_URL` exists only for offline tests and is refused unless it
+  is the Trello API or a loopback address.
+- **Audit.** Mapping changes are audited as the user. Sync bookkeeping is
+  audited as `TRELLO_SYNC` with the user's id. Sync bookkeeping does not
+  change a task's `updated_at`, so open editors are not invalidated.
+- A deleted card is reported ("no longer on the board"). "Unlink" in the task
+  panel forgets the link, and the next sync re-links the card by its marker or
+  creates a new one. Nothing is ever deleted or archived in Trello.

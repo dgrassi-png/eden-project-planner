@@ -82,6 +82,10 @@ export interface Task {
   trelloCardId: string | null;
   trelloCardUrl: string | null;
   trelloSyncStatus: TrelloSyncState;
+  /** Fingerprint of the card content last sent to Trello. */
+  trelloSyncedHash: string | null;
+  trelloSyncedAt: Timestamp | null;
+  trelloLastError: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

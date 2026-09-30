@@ -71,6 +71,9 @@ export function toTask(row: TaskRow): Task {
     trelloCardId: row.trello_card_id,
     trelloCardUrl: row.trello_card_url,
     trelloSyncStatus: row.trello_sync_status as TrelloSyncState,
+    trelloSyncedHash: row.trello_synced_hash,
+    trelloSyncedAt: row.trello_synced_at,
+    trelloLastError: row.trello_last_error,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

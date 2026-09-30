@@ -6,7 +6,7 @@ import { EnvValidationError } from "@/config/env.schema";
 import type { Issue } from "@/domain/result";
 import { HTTP_STATUS, PlanningError } from "@/lib/planning/errors";
 import { getCurrentPrincipal } from "@/lib/auth/server";
-import { actorFor } from "@/lib/auth/session";
+import { actorFor, type Principal } from "@/lib/auth/session";
 import { getPlanningService } from "@/lib/planning/server";
 import type { PlanningService } from "@/lib/planning/service";
 
@@ -65,36 +65,48 @@ function isCrossOrigin(request: Request): boolean {
   }
 }
 
-interface HandlerContext<P> {
+interface ApiContext<P> {
   request: Request;
   params: P;
+  principal: Principal;
+}
+
+interface HandlerContext<P> extends ApiContext<P> {
   service: PlanningService;
 }
 
 /**
- * Wraps a planning route: configuration check, origin check, error mapping.
- * Handlers return data (sent as `{ data }`) or `undefined` (204).
+ * Wraps an authenticated API route: origin check, principal check, error
+ * mapping. Handlers return data (sent as `{ data }`) or `undefined` (204).
  */
-export function planningRoute<P>(handler: (ctx: HandlerContext<P>) => Promise<unknown>, successStatus = 200) {
+export function apiRoute<P>(handler: (ctx: ApiContext<P>) => Promise<unknown>, successStatus = 200) {
   return async (request: Request, context: { params: Promise<P> }): Promise<Response> => {
     try {
       if (isCrossOrigin(request)) return errorResponse(403, "forbidden", "Cross-origin request rejected");
       const principal = await getCurrentPrincipal();
       if (!principal) return errorResponse(401, "unauthenticated", "Sign in with E:DEN Identity");
-      const service = getPlanningService(actorFor(principal));
-      const data = await handler({ request, params: await context.params, service });
+      const data = await handler({ request, params: await context.params, principal });
       return data === undefined ? new Response(null, { status: 204 }) : Response.json({ data }, { status: successStatus });
     } catch (error) {
-      if (error instanceof PlanningError) {
-        return errorResponse(HTTP_STATUS[error.kind], error.kind, error.message, error.issues);
-      }
-      if (error instanceof EnvValidationError) {
-        return errorResponse(503, "unavailable", "Server environment configuration is invalid");
-      }
-      console.error("Unhandled planning API error", error);
-      return errorResponse(500, "internal", "Unexpected server error");
+      return errorToResponse(error);
     }
   };
+}
+
+export function errorToResponse(error: unknown): Response {
+  if (error instanceof PlanningError) {
+    return errorResponse(HTTP_STATUS[error.kind], error.kind, error.message, error.issues);
+  }
+  if (error instanceof EnvValidationError) {
+    return errorResponse(503, "unavailable", "Server environment configuration is invalid");
+  }
+  console.error("Unhandled planning API error", error);
+  return errorResponse(500, "internal", "Unexpected server error");
+}
+
+/** `apiRoute` with a planning service acting as the signed-in user. */
+export function planningRoute<P>(handler: (ctx: HandlerContext<P>) => Promise<unknown>, successStatus = 200) {
+  return apiRoute<P>((ctx) => handler({ ...ctx, service: getPlanningService(actorFor(ctx.principal)) }), successStatus);
 }
 
 /** Rejects attempts to patch permanent fields with a clear message. */

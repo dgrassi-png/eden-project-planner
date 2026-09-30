@@ -43,6 +43,7 @@ function scaffoldTask(partial: Pick<TaskRow, "id" | "edenCode" | "title"> & Part
     successors: [],
     trelloCardUrl: null,
     trelloSyncStatus: null,
+    trelloLastError: null,
     updatedAt: null,
     ...partial,
   };

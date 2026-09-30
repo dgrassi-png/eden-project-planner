@@ -4,12 +4,26 @@ import type BetterSqlite3 from "better-sqlite3";
 
 import type { TaskChanges, TaskDraft } from "@/domain/planning/taskRules";
 import type { TaskDependency } from "@/domain/planning/types";
-import type { MemberRow, ProjectRow, TaskDependencyRow, TaskRow, WorkstreamRow } from "@/lib/db/rows";
+import type { SubtaskMode, TrelloSettings } from "@/domain/trello/mapping";
+import type { MemberRow, ProjectRow, TaskDependencyRow, TaskRow, TrelloSettingsRow, WorkstreamRow } from "@/lib/db/rows";
 
 import type { Actor } from "./actor";
 import { fromSqliteError, PlanningError, type SqliteLikeError } from "./errors";
 import { taskChangesToColumns, toDependency, toMember, toProject, toTask, toWorkstream } from "./mappers";
-import type { BatchOp, PlanningStore } from "./store";
+import type { BatchOp, MemberChanges, PlanningStore, TrelloLinkUpdate } from "./store";
+
+function toTrelloSettings(row: TrelloSettingsRow): TrelloSettings {
+  return {
+    projectId: row.project_id,
+    boardId: row.board_id,
+    boardName: row.board_name,
+    boardUrl: row.board_url,
+    subtaskMode: row.subtask_mode as SubtaskMode,
+    statusLists: JSON.parse(row.status_lists) as TrelloSettings["statusLists"],
+    workstreamLabels: JSON.parse(row.workstream_labels) as TrelloSettings["workstreamLabels"],
+    updatedAt: row.updated_at,
+  };
+}
 
 type Db = BetterSqlite3.Database;
 type Row = Record<string, unknown>;
@@ -135,7 +149,9 @@ export function createSqlitePlanningStore(db: Db, actor: Actor): PlanningStore {
       changes.workstreamId !== undefined && changes.workstreamId !== before.workstream_id
         ? all<TaskRow>("SELECT * FROM tasks WHERE parent_task_id = ?", id)
         : [];
-    update("tasks", id, { ...taskChangesToColumns(changes), updated_at: updatedAt });
+    // A planning change makes a synced card stale until the next sync.
+    const syncState = before.trello_sync_status === "SYNCED" ? { trello_sync_status: "OUT_OF_SYNC" } : {};
+    update("tasks", id, { ...taskChangesToColumns(changes), ...syncState, updated_at: updatedAt });
     const after = taskRow(id) as TaskRow;
     audit({ action: "UPDATE", entityType: "tasks", entityId: id, projectId: after.project_id, before: before as unknown as Row, after: after as unknown as Row });
     // Subtasks moved by the workstream trigger are audited too.
@@ -272,6 +288,25 @@ export function createSqlitePlanningStore(db: Db, actor: Actor): PlanningStore {
 
     listMembers: (projectId) =>
       read(() => all<MemberRow>("SELECT * FROM members WHERE project_id = ? ORDER BY display_name, id", projectId).map(toMember)),
+    getMember: (id) =>
+      read(() => {
+        const row = get<MemberRow>("SELECT * FROM members WHERE id = ?", id);
+        return row && toMember(row);
+      }),
+    updateMember: (id, changes: MemberChanges) =>
+      write(() => {
+        const before = get<MemberRow>("SELECT * FROM members WHERE id = ?", id);
+        if (!before) throw PlanningError.notFound("Member");
+        const columns: Row = { updated_at: timestampAfter(before.updated_at) };
+        if (changes.displayName !== undefined) columns.display_name = changes.displayName;
+        if (changes.email !== undefined) columns.email = changes.email;
+        if (changes.trelloMemberId !== undefined) columns.trello_member_id = changes.trelloMemberId;
+        if (changes.active !== undefined) columns.active = changes.active ? 1 : 0;
+        update("members", id, columns);
+        const after = get<MemberRow>("SELECT * FROM members WHERE id = ?", id) as MemberRow;
+        audit({ action: "UPDATE", entityType: "members", entityId: id, projectId: after.project_id, before: before as unknown as Row, after: after as unknown as Row });
+        return toMember(after);
+      }),
     createMember: (projectId, draft) =>
       write(() => {
         const now = new Date().toISOString();
@@ -327,6 +362,62 @@ export function createSqlitePlanningStore(db: Db, actor: Actor): PlanningStore {
     createDependency: (projectId, input) => write(() => toDependency(createDependencySync(projectId, input))),
     updateDependency: (id, lagDays) => write(() => toDependency(updateDependencySync(id, lagDays))),
     deleteDependency: (id) => write(() => deleteDependencySync(id)),
+
+    getTrelloSettings: (projectId) =>
+      read(() => {
+        const row = get<TrelloSettingsRow>("SELECT * FROM trello_settings WHERE project_id = ?", projectId);
+        return row && toTrelloSettings(row);
+      }),
+    saveTrelloSettings: (settings) =>
+      write(() => {
+        const before = get<TrelloSettingsRow>("SELECT * FROM trello_settings WHERE project_id = ?", settings.projectId);
+        const now = timestampAfter(before?.updated_at);
+        const row: TrelloSettingsRow = {
+          project_id: settings.projectId,
+          board_id: settings.boardId,
+          board_name: settings.boardName,
+          board_url: settings.boardUrl,
+          subtask_mode: settings.subtaskMode,
+          status_lists: JSON.stringify(settings.statusLists),
+          workstream_labels: JSON.stringify(settings.workstreamLabels),
+          created_at: before?.created_at ?? now,
+          updated_at: now,
+        };
+        if (before) {
+          db.prepare(
+            `UPDATE trello_settings SET board_id = @board_id, board_name = @board_name, board_url = @board_url,
+               subtask_mode = @subtask_mode, status_lists = @status_lists, workstream_labels = @workstream_labels,
+               updated_at = @updated_at
+             WHERE project_id = @project_id`,
+          ).run(row);
+        } else {
+          insert("trello_settings", row as unknown as Row);
+        }
+        audit({
+          action: before ? "UPDATE" : "CREATE",
+          entityType: "trello_settings",
+          entityId: settings.projectId,
+          projectId: settings.projectId,
+          before: (before ?? null) as unknown as Row | null,
+          after: row as unknown as Row,
+        });
+        return toTrelloSettings(row);
+      }),
+    recordTrelloSync: (taskId, link: TrelloLinkUpdate) =>
+      write(() => {
+        const before = taskRow(taskId);
+        if (!before) throw PlanningError.notFound("Task");
+        const columns: Row = { trello_sync_status: link.trelloSyncStatus, trello_last_error: link.trelloLastError };
+        if (link.trelloCardId !== undefined) columns.trello_card_id = link.trelloCardId;
+        if (link.trelloCardUrl !== undefined) columns.trello_card_url = link.trelloCardUrl;
+        if (link.trelloSyncedHash !== undefined) columns.trello_synced_hash = link.trelloSyncedHash;
+        if (link.trelloSyncedAt !== undefined) columns.trello_synced_at = link.trelloSyncedAt;
+        // Bookkeeping only: updated_at is kept so open editors are not invalidated.
+        update("tasks", taskId, columns);
+        const after = taskRow(taskId) as TaskRow;
+        if (changedFields(before as unknown as Row, after as unknown as Row).length === 0) return;
+        audit({ action: "UPDATE", entityType: "tasks", entityId: taskId, projectId: after.project_id, before: before as unknown as Row, after: after as unknown as Row });
+      }),
 
     applyBatch: (ops, metadata = {}) =>
       write(() => {

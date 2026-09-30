@@ -72,6 +72,7 @@ export function toPlannerData(snapshot: PlanningSnapshot): DatabasePlannerData {
       successors,
       trelloCardUrl: task.trelloCardUrl,
       trelloSyncStatus: task.trelloSyncStatus,
+      trelloLastError: task.trelloLastError,
       updatedAt: task.updatedAt,
     };
   };

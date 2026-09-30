@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { Button, FormError, FormField, inputClass, PanelSection } from "@/components/ui/form";
+import { Button, FormError, FormField, inputClass } from "@/components/ui/form";
 import { apiRequest } from "@/components/ui/apiClient";
 import { useMutation } from "@/components/ui/useMutation";
 import { computePlannedFinish } from "@/domain/planning/calendar";
@@ -17,6 +17,8 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from "@/domain/planning/constants";
+
+import { TaskTrelloSection } from "@/components/trello/TaskTrelloSection";
 
 import { DependencyEditor } from "./DependencyEditor";
 import { ConflictSection } from "./impact/ConflictSection";
@@ -288,11 +290,13 @@ export function TaskEditor({
       <ConflictSection task={task} />
       <DependencyEditor task={task} data={data} />
 
-      <PanelSection title="Trello">
-        <p className="text-xs text-neutral-500">
-          {task.trelloCardUrl ? task.trelloCardUrl : "Not linked"} · sync arrives in a later phase
-        </p>
-      </PanelSection>
+      <TaskTrelloSection
+        taskId={task.id}
+        isSubtask={task.parentTaskId !== null}
+        cardUrl={task.trelloCardUrl}
+        state={task.trelloSyncStatus}
+        lastError={task.trelloLastError}
+      />
 
       <div className="border-t border-neutral-100 pt-3">
         <FormError message={remove.error?.message ?? null} issues={remove.error?.issues} />

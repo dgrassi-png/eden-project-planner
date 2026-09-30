@@ -1,6 +1,20 @@
 import type { MemberDraft, ProjectDraft, WorkstreamDraft } from "@/domain/planning/entityRules";
 import type { TaskChanges, TaskDraft } from "@/domain/planning/taskRules";
+import type { TrelloSyncState } from "@/domain/planning/constants";
 import type { Member, Project, Task, TaskDependency, Workstream } from "@/domain/planning/types";
+import type { TrelloSettings } from "@/domain/trello/mapping";
+
+/** Sync bookkeeping written by the Trello sync (never touches planning fields or `updatedAt`). */
+export interface TrelloLinkUpdate {
+  trelloSyncStatus: TrelloSyncState;
+  trelloLastError: string | null;
+  trelloCardId?: string | null;
+  trelloCardUrl?: string | null;
+  trelloSyncedHash?: string | null;
+  trelloSyncedAt?: string | null;
+}
+
+export type MemberChanges = Partial<Pick<Member, "displayName" | "email" | "trelloMemberId" | "active">>;
 
 /** One step of an atomic batch (cascade, proposal apply). IDs of new rows are chosen by the caller. */
 export type BatchOp =
@@ -32,7 +46,9 @@ export interface PlanningStore {
   deleteWorkstream(id: string): Promise<void>;
 
   listMembers(projectId: string): Promise<Member[]>;
+  getMember(id: string): Promise<Member | null>;
   createMember(projectId: string, draft: MemberDraft): Promise<Member>;
+  updateMember(id: string, changes: MemberChanges): Promise<Member>;
 
   listTasks(projectId: string): Promise<Task[]>;
   getTask(id: string): Promise<Task | null>;
@@ -56,4 +72,8 @@ export interface PlanningStore {
    * `metadata` is added to each audit event (e.g. `{ cascade_from: "TEC-001" }`).
    */
   applyBatch(ops: BatchOp[], metadata?: Record<string, unknown>): Promise<void>;
+
+  getTrelloSettings(projectId: string): Promise<TrelloSettings | null>;
+  saveTrelloSettings(settings: Omit<TrelloSettings, "updatedAt">): Promise<TrelloSettings>;
+  recordTrelloSync(taskId: string, link: TrelloLinkUpdate): Promise<void>;
 }

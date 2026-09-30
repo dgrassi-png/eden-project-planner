@@ -30,10 +30,14 @@ Scheduling (Phase 03, D-020):
 - GET/POST /api/tasks/:id/cascade (preview / apply the reviewed cascade)
 - GET /api/projects/:id/schedule (dependency checks)
 
-Trello:
-- POST /api/tasks/:id/sync-trello
-- POST /api/projects/:id/sync-trello
-- GET /api/projects/:id/trello-sync-status
+Trello (Phase 04, D-021):
+- GET /api/trello/board (live lists/labels/members of the configured board)
+- GET/PUT /api/projects/:id/trello-settings
+- PUT /api/members/:id/trello
+- GET /api/projects/:id/trello-sync-status (dry-run)
+- POST /api/projects/:id/sync-trello ({ items } from the dry-run)
+- POST /api/tasks/:id/sync-trello ({ dryRun: true } or { confirm })
+- DELETE /api/tasks/:id/trello-link
 
 AI:
 - GET /api/projects/:id/ai-context
