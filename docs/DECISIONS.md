@@ -289,3 +289,16 @@ Rev.03–09 and the `simobarre-EDEN/eden-platform` monorepo (full report:
 - **Open**: database provider approval, monorepo placement, hostnames/ports,
   Trello vs. the removed legacy `task_intelligence`, Identity registration
   (owned by the Identity team).
+
+## D-018: Product-owner decisions on going online (2026-09-30)
+
+Confirmed:
+1. **Hosting on the E:DEN host** (nginx + systemd, `ops/`), not Vercel.
+2. **Move into the monorepo** as `simobarre-EDEN/eden-platform/frontends/planner`.
+   This needs write access to that repository, or its owner to accept the
+   change. Until then the vendored UI foundation stays TRANSITORIO.
+3. **Hostnames and ports**: `planner.e-den.tech` → 127.0.0.1:3300,
+   `planner-preview.e-den.tech` → 127.0.0.1:3310.
+
+Still open: database provider (D-017) and Trello compatibility with the
+removed legacy `task_intelligence`.

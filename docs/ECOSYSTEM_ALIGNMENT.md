@@ -35,7 +35,11 @@ Status labels follow the manual: CANONICO / ATTIVO / TRANSITORIO / TARGET / RISC
 | Ops as code | Critical config mirrored in the repo (ADR-R09-05) | `ops/` holds units, nginx example, env example, installer and deploy script |
 | Hardening | systemd hardening, security headers | `ProtectSystem=strict`, `NoNewPrivileges`, `PrivateTmp`, `UMask=0027`; CSP frame-ancestors, X-Frame-Options, HSTS, nosniff, same-origin referrer, noindex |
 
-## 3. Open decisions (need the product owner / platform owners)
+## 3. Decisions
+
+Confirmed by the product owner on 2026-09-30 (D-018): **1. hosting on the E:DEN host**, **3. move into the monorepo**, **4. hostnames/ports as proposed**. Items 2 (database) and 5 (Trello) are still open.
+
+Original list:
 
 1. **Hosting.** The ecosystem runs on the E:DEN EC2 host behind nginx + systemd, with no Vercel in use. ADR-0002 also says browsers must never see provider hostnames. This iteration prepares the **EC2 path** as the congruent target. The original brief said Vercel, so please confirm.
 2. **Database.** The ecosystem uses per-service SQLite on local disk; PostgreSQL is "NO-GO until driver, server, suite and restore are approved". The planner uses **Postgres (Supabase-hosted)**. That respects exclusive ownership, but it is a new external provider without precedent. Options:
