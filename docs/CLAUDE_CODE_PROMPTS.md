@@ -1,7 +1,7 @@
 # Claude Code — implementation sequence
 
 ## 00 — Bootstrap
-Read README.md, docs/PRODUCT_SPEC.md, docs/ARCHITECTURE.md and supabase/migrations/ first.
+Read README.md, docs/PRODUCT_SPEC.md, docs/ARCHITECTURE.md and db/migrations/ first.
 
 Bootstrap a production-quality Next.js App Router application with TypeScript and Tailwind. Use strict TypeScript, ESLint, src/ layout, clean server/client boundaries and environment variables. Create /planner and /settings/integrations. Do not invent E:DEN dates.
 
@@ -35,5 +35,5 @@ Seed macro workstreams/task codes from PRODUCT_SPEC. Do not invent dates/duratio
 Commit: `feat: add E:DEN initial seed`
 
 ## 07 — Hardening + deploy
-Review auth/RLS, authorization, injection/XSS, service-role isolation, audit coverage, scheduling/date edge cases, responsive UX and errors. Run lint/typecheck/tests/build. Add docs/DEPLOYMENT.md for Supabase + Vercel.
+Review Identity SSO, authorization, injection/XSS, SQLite integrity/backup/restore, audit coverage, scheduling/date edge cases, responsive UX and errors. Run lint/typecheck/tests/build. Keep docs/DEPLOYMENT.md (E:DEN host, nginx + systemd) current.
 Commit: `chore: harden and document deployment`

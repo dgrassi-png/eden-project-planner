@@ -1,2 +1,2 @@
-/** Latest migration this release expects (see supabase/migrations). */
-export const EXPECTED_SCHEMA_VERSION = 3;
+/** Latest migration this release expects (db/migrations/NNNN_*.sql). */
+export const EXPECTED_SCHEMA_VERSION = 1;

@@ -38,12 +38,17 @@ const optionalEnum = <T extends readonly [string, ...string[]]>(values: T) =>
 
 /**
  * All configuration is server-side. Nothing is exposed to the browser: the
- * database is reached only by the Next.js server (service role), and sign-in
+ * database is reached only by the Next.js server, and sign-in
  * goes through E:DEN Identity, so no `NEXT_PUBLIC_*` variable is needed.
+ * The database is a local SQLite file owned by the planner (like Budget and
+ * Natura), so there is no database credential.
  */
 export const serverEnvSchema = z.object({
-  /** Supabase project URL (server-only). */
-  SUPABASE_URL: optionalUrl,
+  /**
+   * Planner-owned SQLite database file (absolute path), e.g.
+   * /var/lib/eden/planner-production/planner.sqlite3. Required in production.
+   */
+  PLANNER_DATABASE_PATH: optionalString,
   /** "identity" (E:DEN SSO, required online) or "local-dev" (loopback only, no login). */
   PLANNER_AUTH_MODE: optionalEnum(["identity", "local-dev"] as const),
   /** E:DEN Identity origin, e.g. https://auth.e-den.tech (no path). */
@@ -60,7 +65,6 @@ export const serverEnvSchema = z.object({
     (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
     z.string().min(32).optional(),
   ),
-  SUPABASE_SERVICE_ROLE_KEY: optionalString,
   TRELLO_API_KEY: optionalString,
   TRELLO_API_TOKEN: optionalString,
   TRELLO_BOARD_ID: optionalString,

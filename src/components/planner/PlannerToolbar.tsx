@@ -17,13 +17,13 @@ export function PlannerToolbar({
   onZoomChange: (zoom: ZoomLevel) => void;
   onScrollToToday: () => void;
   unscheduledCount: number;
-  /** Undefined when editing is unavailable (Supabase not configured). */
+  /** Undefined when editing is unavailable (read-only data). */
   onNewTask?: () => void;
   onNewWorkstream?: () => void;
   canCreateTask: boolean;
 }) {
   const editable = onNewTask !== undefined;
-  const disabledHint = "Configure Supabase to edit planning data";
+  const disabledHint = "Editing is not available for this data";
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 bg-white px-4 py-1.5">
       <div role="group" aria-label="Timeline zoom" className="flex rounded border border-neutral-300 p-0.5">

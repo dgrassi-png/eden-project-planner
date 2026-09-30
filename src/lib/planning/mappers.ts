@@ -1,17 +1,9 @@
-import type { TaskChanges, TaskDraft } from "@/domain/planning/taskRules";
+import type { Geography, TaskPriority, TaskStatus, TrelloSyncState } from "@/domain/planning/constants";
+import type { TaskChanges } from "@/domain/planning/taskRules";
 import type { Member, Project, Task, TaskDependency, Workstream } from "@/domain/planning/types";
-import type {
-  Database,
-  MemberRow,
-  ProjectRow,
-  TaskDependencyRow,
-  TaskRow,
-  WorkstreamRow,
-} from "@/lib/supabase/database.types";
+import type { MemberRow, ProjectRow, TaskDependencyRow, TaskRow, WorkstreamRow } from "@/lib/db/rows";
 
-/** Row (snake_case) <-> domain (camelCase) mapping. */
-
-type Tables = Database["public"]["Tables"];
+/** SQLite row (snake_case, 0/1 booleans) <-> domain (camelCase). */
 
 export function toProject(row: ProjectRow): Project {
   return {
@@ -41,11 +33,11 @@ export function toMember(row: MemberRow): Member {
   return {
     id: row.id,
     projectId: row.project_id,
-    authUserId: row.auth_user_id,
+    edenUserId: row.eden_user_id,
     displayName: row.display_name,
     email: row.email,
     trelloMemberId: row.trello_member_id,
-    active: row.active,
+    active: row.active === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -64,15 +56,16 @@ export function toTask(row: TaskRow): Task {
     plannedStart: row.planned_start,
     plannedDurationDays: row.planned_duration_days,
     plannedFinish: row.planned_finish,
-    status: row.status,
-    priority: row.priority,
-    geography: row.geography,
-    isMilestone: row.is_milestone,
+    // Enum values are guaranteed by CHECK constraints.
+    status: row.status as TaskStatus,
+    priority: row.priority as TaskPriority | null,
+    geography: row.geography as Geography | null,
+    isMilestone: row.is_milestone === 1,
     progressPercent: row.progress_percent,
     sortOrder: row.sort_order,
     trelloCardId: row.trello_card_id,
     trelloCardUrl: row.trello_card_url,
-    trelloSyncStatus: row.trello_sync_status,
+    trelloSyncStatus: row.trello_sync_status as TrelloSyncState,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -89,7 +82,7 @@ export function toDependency(row: TaskDependencyRow): TaskDependency {
   };
 }
 
-const TASK_COLUMNS = {
+export const TASK_COLUMNS = {
   workstreamId: "workstream_id",
   title: "title",
   description: "description",
@@ -105,22 +98,12 @@ const TASK_COLUMNS = {
   sortOrder: "sort_order",
 } as const satisfies Record<keyof TaskChanges, keyof TaskRow>;
 
-export function taskChangesToUpdate(changes: TaskChanges): Tables["tasks"]["Update"] {
-  const update: Record<string, unknown> = {};
-  for (const [key, column] of Object.entries(TASK_COLUMNS)) {
-    const value = changes[key as keyof TaskChanges];
-    if (value !== undefined) update[column] = value;
+/** Column/value pairs for the provided changes (booleans become 0/1; explicit nulls kept). */
+export function taskChangesToColumns(changes: TaskChanges): Partial<Record<keyof TaskRow, unknown>> {
+  const columns: Partial<Record<keyof TaskRow, unknown>> = {};
+  for (const [key, column] of Object.entries(TASK_COLUMNS) as [keyof TaskChanges, keyof TaskRow][]) {
+    const value = changes[key];
+    if (value !== undefined) columns[column] = typeof value === "boolean" ? (value ? 1 : 0) : value;
   }
-  return update as Tables["tasks"]["Update"];
-}
-
-export function taskDraftToInsert(draft: TaskDraft): Tables["tasks"]["Insert"] {
-  return {
-    ...taskChangesToUpdate(draft),
-    project_id: draft.projectId,
-    parent_task_id: draft.parentTaskId,
-    eden_code: draft.edenCode,
-    workstream_id: draft.workstreamId,
-    title: draft.title,
-  };
+  return columns;
 }

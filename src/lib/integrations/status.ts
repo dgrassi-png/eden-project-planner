@@ -15,7 +15,7 @@ export interface IntegrationCheck {
 }
 
 export interface IntegrationStatus {
-  id: "identity" | "supabase" | "trello" | "ai";
+  id: "identity" | "database" | "trello" | "ai";
   name: string;
   state: IntegrationState;
   required: boolean;
@@ -41,10 +41,7 @@ export function getIntegrationStatuses(env: ServerEnv): IntegrationStatus[] {
     check(env, "PLANNER_PUBLIC_URL"),
     check(env, "PLANNER_SESSION_SECRET"),
   ];
-  const supabase = [
-    check(env, "SUPABASE_URL"),
-    check(env, "SUPABASE_SERVICE_ROLE_KEY"),
-  ];
+  const database = [check(env, "PLANNER_DATABASE_PATH")];
   const trello = [
     check(env, "TRELLO_API_KEY"),
     check(env, "TRELLO_API_TOKEN"),
@@ -55,7 +52,7 @@ export function getIntegrationStatuses(env: ServerEnv): IntegrationStatus[] {
 
   return [
     { id: "identity", name: "E:DEN Identity (SSO)", state: stateOf(identity, "all"), required: true, checks: identity },
-    { id: "supabase", name: "Supabase", state: stateOf(supabase, "all"), required: true, checks: supabase },
+    { id: "database", name: "Planner database (SQLite)", state: stateOf(database, "all"), required: true, checks: database },
     { id: "trello", name: "Trello", state: stateOf(trello, "all"), required: false, checks: trello },
     { id: "ai", name: "AI providers", state: stateOf(ai, "any"), required: false, checks: ai },
   ];

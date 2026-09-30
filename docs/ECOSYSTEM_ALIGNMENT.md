@@ -27,7 +27,7 @@ Status labels follow the manual: CANONICO / ATTIVO / TRANSITORIO / TARGET / RISC
 |---|---|---|
 | Sign-in | Identity (`auth.e-den.tech`) is the **only** source of truth for internal access; no local login; consumers read the claim, never re-derive the domain rule (Rev.09 ADR-R09-01/02/03) | Planner is an Identity **relying party**: `/entry/planner` → callback `?code=` → server exchange. Admission = `platform_full_access` or ACTIVE planner entitlement. No password login, no Supabase Auth. Local-dev mode (no login) is served to loopback requests only. See `docs/IDENTITY_INTEGRATION.md` |
 | Authorization | Server-side; browser can never set access | Signed HttpOnly session cookie (`__Host-` prefix online); verified in the proxy **and** in every page and route handler |
-| Browser ↔ DB | Least privilege, no public data plane for admin state | Removed the browser Supabase client and anon key; DB is server-only (`SUPABASE_URL` is no longer `NEXT_PUBLIC_*`) |
+| Data ownership | Per-service SQLite on local disk, own migrations and backup (ADR-0001/0002) | Planner-owned SQLite file per environment (`/var/lib/eden/planner-<env>/`); versioned migrations with checksum drift detection; backup in the E:DEN `backup_sqlite.py` format before every migration; no external database provider, no DB credential |
 | UI foundation | `shared/eden_ui` tokens are canonical; Blue/Cyan/Mint; orange deprecated; operational products use Carbon/Ice; `data-eden-foundation` on `<html>` | Verbatim foundation + Carbon/Ice layer vendored with SHA-256 provenance (TRANSITORIO); Tailwind scales mapped onto E:DEN tokens; amber/violet removed; primary action in E:DEN Blue with on-accent ink; E:DEN mark as favicon |
 | Health | Health and critical-route smoke per service; migrations must be verified as applied | `/healthz` (liveness, no DB, Natura convention) and `/readyz` (config, Identity, DB, **schema version** gate). New `planner_schema_version` migration |
 | Release identity | `X-Eden-Deploy-Sha` baked at build (website) | Same header from `EDEN_DEPLOY_SHA`; `EDEN_NEXT_DIST_DIR` for candidate builds |
@@ -37,7 +37,7 @@ Status labels follow the manual: CANONICO / ATTIVO / TRANSITORIO / TARGET / RISC
 
 ## 3. Decisions
 
-Confirmed by the product owner on 2026-09-30 (D-018): **1. hosting on the E:DEN host**, **3. move into the monorepo**, **4. hostnames/ports as proposed**. Items 2 (database) and 5 (Trello) are still open.
+Confirmed by the product owner on 2026-09-30 (D-018): **1. hosting on the E:DEN host**, **3. move into the monorepo**, **4. hostnames/ports as proposed**. On 2026-09-30 the product owner also chose **2(b′) SQLite on the E:DEN host** (see below) and **confirmed the Planner → Trello sync (5)** (D-019).
 
 Original list:
 

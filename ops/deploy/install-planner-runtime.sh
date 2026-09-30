@@ -15,6 +15,7 @@ envfile="/etc/eden/planner-$environment.env"
 unit="eden-planner-$environment.service"
 
 install -d -o ubuntu -g ubuntu -m 0750 "$state"
+install -d -o ubuntu -g ubuntu -m 0700 "/var/backups/eden/planner-$environment"
 [[ -d "$worktree" ]] || sudo -u ubuntu git clone --quiet "$repo" "$worktree"
 install -d -o ubuntu -g ubuntu -m 0750 "$worktree/.next"
 

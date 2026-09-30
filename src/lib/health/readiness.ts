@@ -2,8 +2,8 @@ import "server-only";
 
 import { EnvValidationError } from "@/config/env.schema";
 import { getAuthConfig } from "@/lib/auth/server";
-import { EXPECTED_SCHEMA_VERSION } from "@/lib/planning/schemaVersion";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getDatabase } from "@/lib/db/connection";
+import { PlanningError } from "@/lib/planning/errors";
 
 export interface ReadinessReport {
   ready: boolean;
@@ -13,8 +13,8 @@ export interface ReadinessReport {
 
 /**
  * Readiness (deploy gate): configuration valid, authentication configured
- * for the environment, database reachable and schema up to date. Reports
- * booleans only, never values or error details.
+ * for the environment, database present and schema at this release's
+ * version. Reports booleans only, never paths or error details.
  */
 export async function checkReadiness(): Promise<ReadinessReport> {
   const report: ReadinessReport = {
@@ -30,22 +30,14 @@ export async function checkReadiness(): Promise<ReadinessReport> {
     throw error;
   }
 
-  const client = createSupabaseAdminClient({ type: "SYSTEM", id: "readiness-probe" });
-  if (client) {
-    try {
-      const { data, error } = await client
-        .from("planner_schema_version")
-        .select("version")
-        .order("version", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      // A missing marker table means the database answered but migrations are not applied.
-      const schemaMissing = error?.code === "PGRST205" || error?.code === "42P01";
-      report.checks.database = !error || schemaMissing;
-      report.checks.schema = !error && data !== null && data.version >= EXPECTED_SCHEMA_VERSION;
-    } catch {
-      report.checks.database = false;
-    }
+  try {
+    getDatabase().prepare("SELECT 1").get();
+    report.checks.database = true;
+    report.checks.schema = true;
+  } catch (error) {
+    if (!(error instanceof PlanningError)) throw error;
+    // The file opened but the schema is behind this release.
+    report.checks.database = error.message.includes("schema is at version");
   }
 
   // Online (production build) the planner must run behind E:DEN Identity.

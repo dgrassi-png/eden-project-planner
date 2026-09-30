@@ -15,7 +15,7 @@ Web-based master planning system for E:DEN.
 - Audit log
 
 ## Stack
-Next.js (App Router) + TypeScript + Tailwind (on the E:DEN UI foundation) + Postgres (Supabase) + E:DEN Identity SSO. Runs on the E:DEN host (nginx + systemd).
+Next.js (App Router) + TypeScript + Tailwind (on the E:DEN UI foundation) + SQLite (planner-owned, like Budget and Natura) + E:DEN Identity SSO. Runs on the E:DEN host (nginx + systemd).
 
 See `docs/PRODUCT_DEFINITION.md` (product source of truth), `docs/PRODUCT_SPEC.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/CLAUDE_CODE_PROMPTS.md`.
 
@@ -33,37 +33,14 @@ The app runs with an empty environment. The planner then shows clearly marked
 UI scaffolding. `/settings/integrations` shows which integrations are configured
 (never their values).
 
-### Local Supabase (offline, recommended for now)
+### Database
 
-Requires Docker Desktop.
-
-```bash
-npx supabase start        # starts local Postgres/Auth/API and applies supabase/migrations
-npx supabase status       # prints the local API URL, anon key and service_role key
-```
-
-Put the printed values into `.env.local`:
-
-```
-SUPABASE_URL=http://127.0.0.1:54321
-SUPABASE_SERVICE_ROLE_KEY=<service_role key>
-```
-
-Then run `npm run dev`. `npx supabase db reset` re-applies the migrations to an
-empty database; there is no seed data. Studio (the database UI) is at
-http://127.0.0.1:54323.
-
-### Hosted Supabase
-
-1. Create a Supabase project.
-2. Apply the migrations in `supabase/migrations/` in filename order, either
-   with the SQL editor or with `supabase db push` after `supabase link`.
-3. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` (or in
-   `/etc/eden/planner-<env>.env` on the host).
-4. Open `/planner`, create the project, then add workstreams, tasks and team members.
-
-The service-role key stays on the server and the browser never talks to the
-database.
+The planner owns a single SQLite file (no external service, no Docker).
+Offline, `npm run dev` creates and migrates `.data/planner.sqlite3`
+automatically; open `/planner` and create the project. `npm run db:status`
+shows the schema version. On the E:DEN host the file lives in
+`/var/lib/eden/planner-<env>/` and the deploy script backs it up and migrates it
+(`docs/DEPLOYMENT.md`).
 
 ### Sign-in and going online
 
@@ -83,7 +60,7 @@ manual, open decisions), `docs/IDENTITY_INTEGRATION.md` and
 | `npm run typecheck` | Route type generation + `tsc --noEmit` |
 | `npm test` | Unit tests (Vitest) |
 | `npm run check` | Lint + typecheck + tests |
-| `npm run test:db` | Apply migrations to a throwaway local Postgres and run `supabase/tests` (needs PostgreSQL 15+ binaries) |
+| `npm run db:migrate` / `db:status` | Apply migrations to / inspect the local (or `PLANNER_DATABASE_PATH`) database |
 
 ## Layout
 
@@ -92,8 +69,10 @@ src/app/         routes (/planner, /settings/team, /settings/integrations, /api/
 src/components/  UI grouped by surface (shell, planner, settings, ui)
 src/config/      env validation (server-only secrets vs public vars), app constants
 src/domain/      framework-free planning + timeline logic (unit tested)
-src/lib/         Supabase clients, planning service + store, API helpers
-supabase/        migrations (canonical schema) and SQL tests
+src/lib/         SQLite store and migrator, planning service, auth, API helpers
+db/migrations/   canonical SQLite schema (NNNN_name.sql)
+ops/             systemd units, nginx example, deploy/install scripts
+scripts/db.mjs   host CLI: migrate, status, backup
 ```
 
 Never commit secrets. Use `.env.local`.

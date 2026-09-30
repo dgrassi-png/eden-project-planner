@@ -14,7 +14,7 @@ function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-/** Shown when Supabase is configured but no project exists yet. */
+/** Shown when the planner database has no project yet. */
 export function CreateProjectForm() {
   const [name, setName] = useState("");
   const [slugOverride, setSlugOverride] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export function CreateProjectForm() {
       <form onSubmit={submit} className="max-w-sm space-y-3 rounded border border-neutral-200 bg-white p-4">
         <div>
           <h2 className="text-sm font-semibold text-neutral-900">Create the planning project</h2>
-          <p className="text-xs text-neutral-500">Supabase is connected, but no project exists yet.</p>
+          <p className="text-xs text-neutral-500">The planning database is ready, but no project exists yet.</p>
         </div>
         <FormField label="Name">
           <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} placeholder="E:DEN" required />

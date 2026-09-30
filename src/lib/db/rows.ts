@@ -1,0 +1,67 @@
+/** Row shapes of the SQLite schema (db/migrations). Booleans are 0/1, JSON is text. */
+
+export interface ProjectRow {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  trello_board_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkstreamRow {
+  id: string;
+  project_id: string;
+  code: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MemberRow {
+  id: string;
+  project_id: string;
+  eden_user_id: string | null;
+  display_name: string;
+  email: string | null;
+  trello_member_id: string | null;
+  active: 0 | 1;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskRow {
+  id: string;
+  project_id: string;
+  workstream_id: string;
+  parent_task_id: string | null;
+  eden_code: string;
+  title: string;
+  description: string | null;
+  owner_member_id: string | null;
+  planned_start: string | null;
+  planned_duration_days: number | null;
+  planned_finish: string | null;
+  status: string;
+  priority: string | null;
+  geography: string | null;
+  is_milestone: 0 | 1;
+  progress_percent: number | null;
+  sort_order: number;
+  trello_card_id: string | null;
+  trello_card_url: string | null;
+  trello_sync_status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskDependencyRow {
+  id: string;
+  project_id: string;
+  predecessor_task_id: string;
+  successor_task_id: string;
+  lag_days: number;
+  created_at: string;
+}

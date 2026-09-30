@@ -10,3 +10,9 @@ coverage
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
+
+# Local SQLite database (never committed)
+.data/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm

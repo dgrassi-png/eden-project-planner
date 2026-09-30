@@ -7,7 +7,7 @@ import type { Issue } from "@/domain/result";
 import { HTTP_STATUS, PlanningError } from "@/lib/planning/errors";
 import { getCurrentPrincipal } from "@/lib/auth/server";
 import { actorFor } from "@/lib/auth/session";
-import { getPlanningBackend } from "@/lib/planning/server";
+import { getPlanningService } from "@/lib/planning/server";
 import type { PlanningService } from "@/lib/planning/service";
 
 const MAX_BODY_BYTES = 64 * 1024;
@@ -81,11 +81,8 @@ export function planningRoute<P>(handler: (ctx: HandlerContext<P>) => Promise<un
       if (isCrossOrigin(request)) return errorResponse(403, "forbidden", "Cross-origin request rejected");
       const principal = await getCurrentPrincipal();
       if (!principal) return errorResponse(401, "unauthenticated", "Sign in with E:DEN Identity");
-      const backend = getPlanningBackend(actorFor(principal));
-      if (backend.status !== "ready") {
-        return errorResponse(503, "unavailable", "Supabase is not configured on the server");
-      }
-      const data = await handler({ request, params: await context.params, service: backend.service });
+      const service = getPlanningService(actorFor(principal));
+      const data = await handler({ request, params: await context.params, service });
       return data === undefined ? new Response(null, { status: 204 }) : Response.json({ data }, { status: successStatus });
     } catch (error) {
       if (error instanceof PlanningError) {

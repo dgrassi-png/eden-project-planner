@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { TaskRow } from "@/lib/supabase/database.types";
+import type { TaskRow } from "@/lib/db/rows";
 
-import { taskChangesToUpdate, taskDraftToInsert, toTask } from "./mappers";
+import { taskChangesToColumns, toTask } from "./mappers";
 
 const row: TaskRow = {
   id: "t-1",
@@ -19,58 +19,28 @@ const row: TaskRow = {
   status: "READY",
   priority: null,
   geography: "CECINA_REQUIRED",
-  is_milestone: false,
+  is_milestone: 0,
   progress_percent: null,
   sort_order: 3,
   trello_card_id: null,
   trello_card_url: null,
   trello_sync_status: "NOT_SYNCED",
-  created_at: "2026-09-29T10:00:00+00:00",
-  updated_at: "2026-09-29T10:00:00+00:00",
+  created_at: "2026-09-29T10:00:00.000Z",
+  updated_at: "2026-09-29T10:00:00.000Z",
 };
 
 describe("mappers", () => {
-  it("maps task rows to domain tasks", () => {
-    expect(toTask(row)).toMatchObject({
-      edenCode: "TEC-001",
-      workstreamId: "ws-1",
-      plannedStart: "2026-10-05",
-      plannedDurationDays: 5,
-      plannedFinish: "2026-10-09",
-      geography: "CECINA_REQUIRED",
-      priority: null,
-      sortOrder: 3,
-    });
+  it("maps SQLite task rows to domain tasks", () => {
+    expect(toTask(row)).toMatchObject({ edenCode: "TEC-001", isMilestone: false, geography: "CECINA_REQUIRED", priority: null, sortOrder: 3 });
+    expect(toTask({ ...row, is_milestone: 1 }).isMilestone).toBe(true);
   });
 
-  it("maps only provided changes, keeping explicit nulls", () => {
-    expect(taskChangesToUpdate({ plannedStart: null, plannedFinish: null, title: "x" })).toEqual({
+  it("maps only provided changes, keeping explicit nulls and converting booleans", () => {
+    expect(taskChangesToColumns({ plannedStart: null, plannedFinish: null, isMilestone: true })).toEqual({
       planned_start: null,
       planned_finish: null,
-      title: "x",
+      is_milestone: 1,
     });
-    expect(taskChangesToUpdate({})).toEqual({});
-  });
-
-  it("maps drafts to inserts including permanent identifiers", () => {
-    const insert = taskDraftToInsert({
-      projectId: "p-1",
-      workstreamId: "ws-1",
-      parentTaskId: null,
-      edenCode: "TEC-002",
-      title: "t",
-      description: null,
-      ownerMemberId: null,
-      plannedStart: null,
-      plannedDurationDays: null,
-      plannedFinish: null,
-      status: "BACKLOG",
-      priority: null,
-      geography: null,
-      isMilestone: false,
-      progressPercent: null,
-      sortOrder: 0,
-    });
-    expect(insert).toMatchObject({ project_id: "p-1", eden_code: "TEC-002", parent_task_id: null, priority: null });
+    expect(taskChangesToColumns({})).toEqual({});
   });
 });

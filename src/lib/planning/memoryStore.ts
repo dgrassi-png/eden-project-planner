@@ -6,7 +6,7 @@ import type { PlanningStore } from "./store";
 /**
  * In-memory PlanningStore for tests. It mirrors the uniqueness and
  * reference rules the database enforces, but not every trigger. Database
- * behaviour is covered separately by supabase/tests.
+ * behaviour is covered by the SQLite store tests (src/lib/db, sqliteStore.test.ts).
  */
 export function createMemoryPlanningStore(): PlanningStore & { clock: { tick(): void } } {
   const projects = new Map<string, Project>();
@@ -70,7 +70,7 @@ export function createMemoryPlanningStore(): PlanningStore & { clock: { tick(): 
       const member: Member = {
         id: id("member"),
         projectId,
-        authUserId: null,
+        edenUserId: null,
         trelloMemberId: null,
         active: true,
         createdAt: timestamp(),

@@ -7,7 +7,7 @@ import type { ScaffoldPlannerData, TaskRow } from "./types";
  * planner layout. Codes use the `SCAFFOLD-` prefix so they can never be
  * mistaken for real E:DEN codes, and every planning value is null (TBD).
  *
- * Shown only while Supabase is not configured.
+ * Used as generic fixture rows in tests.
  */
 
 function scaffoldTask(partial: Pick<TaskRow, "id" | "edenCode" | "title"> & Partial<TaskRow>): TaskRow {

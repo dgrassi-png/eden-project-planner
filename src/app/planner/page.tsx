@@ -4,8 +4,7 @@ import { connection } from "next/server";
 
 import { CreateProjectForm } from "@/components/planner/CreateProjectForm";
 import { PlannerWorkspace } from "@/components/planner/PlannerWorkspace";
-import { SCAFFOLD_PLANNER_DATA } from "@/components/planner/scaffold";
-import { PlannerErrorState, SupabaseNotConfiguredNotice } from "@/components/planner/StatusNotices";
+import { PlannerErrorState } from "@/components/planner/StatusNotices";
 import { toPlannerData } from "@/components/planner/viewModel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PLANNING_TIME_ZONE } from "@/config/app";
@@ -26,14 +25,6 @@ export default async function PlannerPage({ searchParams }: PageProps<"/planner"
   );
 
   switch (page.status) {
-    case "not_configured":
-      return (
-        <>
-          <PageHeader title="Master plan" subtitle={`${todayLabel} · Data source: UI scaffolding (not canonical)`} />
-          <SupabaseNotConfiguredNotice />
-          <PlannerWorkspace data={SCAFFOLD_PLANNER_DATA} today={today} />
-        </>
-      );
     case "error":
       return (
         <>
@@ -53,7 +44,7 @@ export default async function PlannerPage({ searchParams }: PageProps<"/planner"
         <>
           <PageHeader
             title={page.project.name}
-            subtitle={`${todayLabel} · Data source: Supabase`}
+            subtitle={`${todayLabel} · Data source: planner database`}
             actions={
               page.projects.length > 1 ? (
                 <nav aria-label="Projects" className="flex gap-2 text-xs">

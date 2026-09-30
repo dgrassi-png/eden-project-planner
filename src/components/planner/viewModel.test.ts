@@ -10,7 +10,7 @@ describe("toPlannerData", () => {
       project: { id: PROJECT_ID, name: "P", slug: "p", description: null, trelloBoardId: null, createdAt: "", updatedAt: "" },
       workstreams: [makeWorkstream({ id: "ws-1", code: "TEC", name: "Engineering" })],
       members: [
-        { id: "m-1", projectId: PROJECT_ID, authUserId: null, displayName: "Owner", email: null, trelloMemberId: null, active: true, createdAt: "", updatedAt: "" },
+        { id: "m-1", projectId: PROJECT_ID, edenUserId: null, displayName: "Owner", email: null, trelloMemberId: null, active: true, createdAt: "", updatedAt: "" },
       ],
       tasks: [
         makeTask({ id: "t-2", edenCode: "TEC-002", plannedStart: "2026-10-05" }),

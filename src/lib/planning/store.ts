@@ -3,7 +3,7 @@ import type { TaskChanges, TaskDraft } from "@/domain/planning/taskRules";
 import type { Member, Project, Task, TaskDependency, Workstream } from "@/domain/planning/types";
 
 /**
- * Persistence port for planning data. The Supabase implementation is the
+ * Persistence port for planning data. The SQLite implementation is the
  * only production store; an in-memory implementation backs service tests.
  * Implementations throw `PlanningError` on failure.
  */

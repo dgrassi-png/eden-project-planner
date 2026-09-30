@@ -1,5 +1,5 @@
 /**
- * Planning enums, mirroring the Postgres enums in `supabase/schema.sql`.
+ * Planning enums, mirroring the CHECK constraints in `db/migrations`.
  * Keep the two in sync: the database is authoritative.
  */
 

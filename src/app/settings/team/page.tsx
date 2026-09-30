@@ -28,9 +28,7 @@ export default async function TeamPage({ searchParams }: PageProps<"/settings/te
       <>
         {header}
         <p className="p-4 text-xs text-neutral-500">
-          {page.status === "not_configured"
-            ? "Supabase is not configured. Members are stored in the database."
-            : "Create the project from the Planner page first."}
+          Create the project from the Planner page first.
         </p>
       </>
     );

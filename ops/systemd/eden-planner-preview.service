@@ -15,6 +15,7 @@ UMask=0027
 WorkingDirectory=/home/ubuntu/workspace/eden-planner-preview
 EnvironmentFile=/etc/eden/planner-preview.env
 Environment=NODE_ENV=production
+Environment=PLANNER_DATABASE_PATH=/var/lib/eden/planner-preview/planner.sqlite3
 Environment=PATH=/home/ubuntu/.local/node22/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=/home/ubuntu/.local/node22/bin/npm run start -- --hostname 127.0.0.1 --port 3310
 KillSignal=SIGTERM

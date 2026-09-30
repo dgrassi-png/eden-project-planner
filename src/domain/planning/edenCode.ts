@@ -5,7 +5,7 @@
  *   TEC-001.1    subtask   (one level only; prefix = parent code)
  *
  * Codes are assigned once and never change, even when titles do. The rules
- * here mirror the database constraints in supabase/migrations.
+ * here mirror the database constraints in db/migrations.
  */
 
 export const EDEN_CODE_PATTERN = /^([A-Z][A-Z0-9]{1,9})-(\d{3,})(?:\.([1-9]\d*))?$/;

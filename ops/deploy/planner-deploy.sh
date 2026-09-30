@@ -8,8 +8,9 @@
 # Guarantees:
 # - builds into .next-candidate; the live build is only replaced after the
 #   candidate has a BUILD_ID;
+# - backs up the SQLite database, then applies migrations, before the swap;
 # - after restart: systemd active, /healthz 200, X-Eden-Deploy-Sha == target,
-#   /readyz 200 (Identity configured, database reachable, schema up to date);
+#   /readyz 200 (Identity configured, database present, schema up to date);
 #   otherwise automatic rollback to the previous build;
 # - a preview deploy can never touch the production unit, port or worktree,
 #   and verifies afterwards that production's SHA did not move;
@@ -38,6 +39,8 @@ fi
 
 readonly worktree="/home/ubuntu/workspace/eden-planner-$environment"
 readonly state_dir="/var/lib/eden/planner-$environment"
+readonly database="$state_dir/planner.sqlite3"
+readonly backup_root="/var/backups/eden"
 readonly live_build="$worktree/.next"
 readonly candidate_build="$worktree/.next-candidate"
 readonly rollback_build="$worktree/.next-rollback"
@@ -108,6 +111,19 @@ if [[ "$action" == "deploy" ]]; then
     die "build failed; live build untouched"
   fi
   [[ -s "$candidate_build/BUILD_ID" ]] || { remove_build_dir "$candidate_build"; die "candidate has no BUILD_ID"; }
+
+  # Database: backup before any migration, then migrate (E:DEN release rules).
+  # Migrations are additive; a schema rollback is a restore from this backup.
+  if [[ -f "$database" ]]; then
+    node scripts/db.mjs backup --database "$database" --destination "$backup_root" \
+      --product "planner-$environment" --retention-days 14 \
+      || { remove_build_dir "$candidate_build"; die "database backup failed; nothing changed"; }
+    node scripts/db.mjs migrate --database "$database" \
+      || { remove_build_dir "$candidate_build"; die "migration failed; restore from $backup_root/planner-$environment if needed"; }
+  else
+    log "no database yet: creating $database"
+    node scripts/db.mjs migrate --database "$database" --create
+  fi
 
   remove_build_dir "$rollback_build"
   [[ -d "$live_build" ]] && /usr/bin/mv -- "$live_build" "$rollback_build"

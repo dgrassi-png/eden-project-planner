@@ -37,6 +37,16 @@ describe("preview/production boundary", () => {
     }
   });
 
+  it("gives each environment its own database file", () => {
+    expect(production).toContain("PLANNER_DATABASE_PATH=/var/lib/eden/planner-production/planner.sqlite3");
+    expect(preview).toContain("PLANNER_DATABASE_PATH=/var/lib/eden/planner-preview/planner.sqlite3");
+  });
+
+  it("backs up the database before migrating", () => {
+    expect(deploy.indexOf("scripts/db.mjs backup")).toBeGreaterThan(0);
+    expect(deploy.indexOf("scripts/db.mjs backup")).toBeLessThan(deploy.indexOf("scripts/db.mjs migrate --database \"$database\" \\"));
+  });
+
   it("requires explicit confirmation for production deploys", () => {
     expect(deploy).toContain("production requires --confirm-production");
     expect(deploy).toContain("CRITICAL INCIDENT");

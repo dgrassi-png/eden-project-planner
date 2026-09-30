@@ -62,12 +62,12 @@ export default async function IntegrationsPage() {
           </IntegrationCard>
 
           <IntegrationCard
-            status={byId(statuses, "supabase")}
-            description="Planner-owned Postgres database, the planning source of truth. Supabase Auth is not used."
+            status={byId(statuses, "database")}
+            description="Planner-owned SQLite database on the E:DEN host (/var/lib/eden/planner-<env>/), the planning source of truth. Offline it defaults to .data/planner.sqlite3."
           >
             <p className="text-[11px] text-neutral-500">
-              Apply <code className="font-mono">supabase/migrations</code> to the project. Planning data is read and
-              written server-side with the service-role key; the browser never talks to the database.
+              Migrations: <code className="font-mono">node scripts/db.mjs migrate</code> (after a backup). The browser never
+              talks to the database.
             </p>
           </IntegrationCard>
 

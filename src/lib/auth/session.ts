@@ -1,5 +1,5 @@
 import type { AuthConfig } from "@/config/auth";
-import type { Actor } from "@/lib/supabase/admin";
+import type { Actor } from "@/lib/planning/actor";
 
 import { signToken, verifyToken, type TokenClaims } from "./token";
 

@@ -12,13 +12,15 @@ ADR-R09-04).
 | Unit | `eden-planner-production.service` | `eden-planner-preview.service` |
 | Worktree | `/home/ubuntu/workspace/eden-planner-production` | `…/eden-planner-preview` |
 | State | `/var/lib/eden/planner-production` | `/var/lib/eden/planner-preview` |
+| Database | `/var/lib/eden/planner-production/planner.sqlite3` | `/var/lib/eden/planner-preview/planner.sqlite3` |
+| Backups | `/var/backups/eden/planner-production/<stamp>/` | `/var/backups/eden/planner-preview/<stamp>/` |
 | Env (root, 0600) | `/etc/eden/planner-production.env` | `/etc/eden/planner-preview.env` |
 | Identity callback | `https://planner.e-den.tech/auth/eden/callback` | to be agreed with Identity |
 
 ## Preconditions (go-live blockers)
 
 1. The planner is registered in E:DEN Identity (`docs/IDENTITY_INTEGRATION.md` §4).
-2. The database decision is approved. The migrations in `supabase/migrations/` are applied in filename order, and a backup/restore runbook exists.
+2. Nothing to provision for the database: it is a SQLite file in the state dir, created and migrated by the deploy script (backup first, see below).
 3. A TLS certificate and an nginx server block are in place for the hostnames (host-managed).
 4. Node 22 is at `/home/ubuntu/.local/node22/bin`, the same path the website uses.
 
@@ -35,10 +37,9 @@ sudo nginx -t && sudo systemctl reload nginx
 ## Deploy (evidence package: commit, checks, migrations, smoke, rollback pointer)
 
 ```bash
-# 1. Apply migrations first (backup the DB before any migration).
-# 2. Preview:
+# Preview (the script backs up the database, then migrates it, before switching builds):
 ops/deploy/planner-deploy.sh deploy preview <40-char-sha>
-# 3. Production, after preview qualification:
+# Production, after preview qualification:
 ops/deploy/planner-deploy.sh deploy production <40-char-sha> --confirm-production
 ```
 
@@ -61,3 +62,15 @@ Rollback: `ops/deploy/planner-deploy.sh rollback <env> [--confirm-production]`.
 - An anonymous request to `/planner` redirects (307) to `/auth/eden/start`.
 - An anonymous request to `/api/projects` returns 401.
 - Signing in with an `@e-den.tech` account through Identity lands on `/planner`.
+
+## Database backups and restore
+
+- Format identical to the E:DEN `ops/backup/backup_sqlite.py`: online backup, `quick_check`, gzip -9, SHA-256 manifest, 0600/0700, atomic publish, retention.
+- Every deploy takes a backup before migrating. For a daily backup, add a timer that runs:
+  `node scripts/db.mjs backup --database /var/lib/eden/planner-production/planner.sqlite3 --destination /var/backups/eden --product planner-production --retention-days 7`
+  (as for `eden-sqlite-backup@budget`; the planner can use that template once it lives in the monorepo).
+- Restore (to an isolated path first):
+  1. Verify the archive SHA-256 against `manifest.json`.
+  2. `gunzip -c planner-production.sqlite3.gz > restored.sqlite3`.
+  3. Check with `node scripts/db.mjs status --database $PWD/restored.sqlite3` and `PRAGMA integrity_check`.
+  4. Stop the unit, replace the database file, remove any `-wal`/`-shm`, start the unit, check `/readyz`.

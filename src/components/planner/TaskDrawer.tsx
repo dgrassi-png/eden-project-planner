@@ -13,7 +13,7 @@ function Field({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-/** Read-only task details, used for scaffold rows while Supabase is not configured. */
+/** Read-only task details (used for non-editable fixture rows). */
 export function TaskDrawer({ task, onClose }: { task: TaskRow; onClose: () => void }) {
   return (
     <SidePanel eyebrow={`${task.edenCode}${task.isMilestone ? " · Milestone" : ""}`} title={task.title} onClose={onClose}>
@@ -29,7 +29,7 @@ export function TaskDrawer({ task, onClose }: { task: TaskRow; onClose: () => vo
         <Field label="Geography" value={formatGeography(task)} />
       </dl>
       <p className="rounded bg-neutral-50 px-2 py-1.5 text-[11px] text-neutral-500">
-        Scaffold row. Configure Supabase to edit real planning data.
+        Read-only row.
       </p>
     </SidePanel>
   );

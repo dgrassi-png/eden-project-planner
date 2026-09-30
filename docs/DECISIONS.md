@@ -302,3 +302,48 @@ Confirmed:
 
 Still open: database provider (D-017) and Trello compatibility with the
 removed legacy `task_intelligence`.
+
+## D-019: SQLite on the E:DEN host; Trello confirmed (2026-09-30)
+
+Decided by the product owner. This supersedes the Supabase/Postgres choices in
+D-007, D-008 and D-011 and the "Supabase" wording of Product Definition §33.
+Canonical data now lives in the planner's own SQLite database; Supabase is no
+longer used.
+
+- **Why.** It is the E:DEN standard for per-service data (Budget, Natura). It
+  adds no external provider and needs no approval (PostgreSQL is NO-GO in the
+  manual), and backups use the existing E:DEN format and tooling. SQLite is
+  ample for an internal planning tool.
+- **Storage.** One file per environment, `/var/lib/eden/planner-<env>/planner.sqlite3`,
+  set in the systemd unit. WAL mode, `foreign_keys=ON`, 5 s busy timeout,
+  driver `better-sqlite3`. Offline the file is `.data/planner.sqlite3`.
+- **Schema.** `db/migrations/NNNN_name.sql`, applied by `scripts/db.mjs migrate`
+  (never implicitly in production). Each migration is recorded in
+  `schema_migrations` with its SHA-256; changing an applied migration is a hard
+  error. The app refuses to serve a schema older than `EXPECTED_SCHEMA_VERSION`,
+  and `/readyz` reports it.
+- **Integrity.**
+  - CHECK constraints: code formats via `GLOB`, enums, scheduling invariants.
+  - `RAISE(ABORT, 'CODE: …')` triggers: permanent codes, parent and project,
+    hierarchy rules, subtask workstream propagation, dependency project and
+    parent/child rules, append-only audit.
+  - Cycles are rejected inside the write transaction with a recursive query,
+    because SQLite does not allow CTEs in triggers and writers are serialised.
+- **Audit** (replaces D-011's DB trigger). The store writes the audit event in
+  the same IMMEDIATE transaction as the change, with before/after rows and the
+  changed fields, attributed to the Identity user. This follows the E:DEN
+  audit contract ("config save + audit event → same transaction"). Changes made
+  directly with the `sqlite3` CLI are not audited; operators must not edit the
+  database by hand.
+- **Backups.**
+  - `scripts/db.mjs backup` uses the same layout and manifest as
+    `ops/backup/backup_sqlite.py`.
+  - The deploy script backs up before migrating.
+  - Once the planner is in the monorepo, the platform script and the
+    `eden-sqlite-backup@` timer can be used by adding `planner` to its product
+    choices.
+- **Tests.** Schema guards, store, audit and the service scenarios (shared
+  with the in-memory store) run against real SQLite in vitest, so also in CI.
+- **Trello (item 5).** The Planner → Trello sync (Phase 04) is confirmed. It is
+  one-way, previewed, idempotent and planner-owned, and it does not revive the
+  removed `task_intelligence` (no email-to-task, no scoring).

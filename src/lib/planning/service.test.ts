@@ -1,12 +1,33 @@
+import { fileURLToPath } from "node:url";
+
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { Project, Workstream } from "@/domain/planning/types";
+import { applyMigrations, openDatabase } from "@/lib/db/migrator.mjs";
 
 import { PlanningError } from "./errors";
 import { createMemoryPlanningStore } from "./memoryStore";
 import { PlanningService } from "./service";
+import { createSqlitePlanningStore } from "./sqliteStore";
+import type { PlanningStore } from "./store";
 
-let store: ReturnType<typeof createMemoryPlanningStore>;
+const MIGRATIONS = fileURLToPath(new URL("../../../db/migrations", import.meta.url));
+
+/** The same scenarios run against the in-memory store and the real SQLite store. */
+const STORES: [string, () => { store: PlanningStore; tick: () => void }][] = [
+  ["memory", () => {
+    const memory = createMemoryPlanningStore();
+    return { store: memory, tick: memory.clock.tick };
+  }],
+  ["sqlite", () => {
+    const db = openDatabase(":memory:", { create: true });
+    applyMigrations(db, MIGRATIONS);
+    return { store: createSqlitePlanningStore(db, { type: "USER", id: "eden_test" }), tick: () => undefined };
+  }],
+];
+
+describe.each(STORES)("PlanningService on %s store", (_name, makeStore) => {
+let store: { tick: () => void };
 let service: PlanningService;
 let project: Project;
 let tec: Workstream;
@@ -23,8 +44,9 @@ async function rejection(promise: Promise<unknown>): Promise<PlanningError> {
 }
 
 beforeEach(async () => {
-  store = createMemoryPlanningStore();
-  service = new PlanningService(store);
+  const made = makeStore();
+  store = { tick: made.tick };
+  service = new PlanningService(made.store);
   project = await service.createProject({ name: "Test project", slug: "test" });
   tec = await service.createWorkstream(project.id, { code: "tec", name: "Engineering", sortOrder: 1 });
   cert = await service.createWorkstream(project.id, { code: "CERT", name: "Certification", sortOrder: 2 });
@@ -35,7 +57,7 @@ describe("PlanningService tasks", () => {
     const task = await service.createTask(project.id, { edenCode: "TEC-001", title: "Controller", workstreamId: tec.id });
     expect(task).toMatchObject({ plannedStart: null, plannedFinish: null, priority: null, ownerMemberId: null });
 
-    store.clock.tick();
+    store.tick();
     const scheduled = await service.updateTask(task.id, { plannedStart: "2026-10-09", plannedDurationDays: 3 });
     expect(scheduled.plannedFinish).toBe("2026-10-13");
     expect(scheduled.edenCode).toBe("TEC-001");
@@ -57,7 +79,7 @@ describe("PlanningService tasks", () => {
   it("detects stale edits", async () => {
     const task = await service.createTask(project.id, { edenCode: "TEC-001", title: "a", workstreamId: tec.id });
     const loadedVersion = task.updatedAt;
-    store.clock.tick();
+    store.tick();
     await service.updateTask(task.id, { title: "someone else" });
     const error = await rejection(service.updateTask(task.id, { title: "mine" }, loadedVersion));
     expect(error.kind).toBe("conflict");
@@ -142,4 +164,5 @@ describe("PlanningService workstreams", () => {
     expect(snapshot.workstreams).toHaveLength(2);
     expect(snapshot.tasks).toHaveLength(1);
   });
+});
 });

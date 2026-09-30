@@ -9,7 +9,7 @@ import type {
 } from "./constants";
 
 /**
- * Planning domain models (camelCase mirrors of the Postgres tables).
+ * Planning domain models (camelCase mirrors of the database tables).
  *
  * Nullable planning fields mean "not validated yet" and must be shown as TBD.
  * They are never filled with invented values.
@@ -41,7 +41,8 @@ export interface Workstream {
 export interface Member {
   id: string;
   projectId: string;
-  authUserId: string | null;
+  /** E:DEN Identity user id, once linked. */
+  edenUserId: string | null;
   displayName: string;
   email: string | null;
   trelloMemberId: string | null;
