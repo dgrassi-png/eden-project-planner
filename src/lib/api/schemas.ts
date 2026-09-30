@@ -58,6 +58,11 @@ const taskFields = {
   geography: z.enum(GEOGRAPHIES).nullish(),
   isMilestone: z.boolean().optional(),
   progressPercent: z.number().int().nullish(),
+  deadline: isoDate.nullish(),
+  blocker: z.string().max(4_000).nullish(),
+  waitingFor: z.string().max(4_000).nullish(),
+  notes: z.string().max(20_000).nullish(),
+  splittable: z.boolean().nullish(),
   sortOrder: z.number().int().optional(),
 };
 
@@ -70,12 +75,22 @@ export const createTaskSchema = z.strictObject({
 /** Fields that identify a task permanently and can never be patched. */
 export const IMMUTABLE_TASK_FIELDS = ["edenCode", "parentTaskId", "projectId", "plannedFinish"] as const;
 
+/** The cascade moves the user reviewed (see PlanningService.updateTask). */
+export const cascadeConfirmationSchema = z.strictObject({
+  moves: z.array(z.strictObject({ taskId: id, toStart: isoDate })).max(2_000),
+});
+
 export const updateTaskSchema = z.strictObject({
   ...taskFields,
   title: shortText.optional(),
   /** Optimistic concurrency: the `updatedAt` the editor loaded. */
   expectedUpdatedAt: z.string().max(64).optional(),
+  /** Explicit cascade: apply these reviewed successor moves together with the change. */
+  cascade: cascadeConfirmationSchema.optional(),
 });
+
+/** Impact preview of a patch (nothing is saved). */
+export const taskImpactSchema = z.strictObject({ ...taskFields, title: shortText.optional() });
 
 export const createDependencySchema = z.strictObject({
   predecessorTaskId: id,

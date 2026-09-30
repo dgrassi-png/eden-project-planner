@@ -101,9 +101,19 @@ export function TaskCells({
       <div
         className={`shrink-0 truncate px-2 font-mono text-[11px] ${row.predecessorCodes.length ? "" : muted}`}
         style={{ width: width("deps") }}
-        title={row.predecessorCodes.join(", ")}
+        title={row.predecessors
+          .map((p) => (p.state === "violated" ? `${p.edenCode}: ${p.conflictDays}-day conflict` : p.edenCode))
+          .join(", ")}
       >
-        {row.predecessorCodes.length ? row.predecessorCodes.join(", ") : "—"}
+        {row.predecessors.length
+          ? row.predecessors.map((p, index) => (
+              <span key={p.dependencyId} className={p.state === "violated" ? "font-semibold text-red-700" : undefined}>
+                {index ? ", " : ""}
+                {p.state === "violated" ? "⚠" : ""}
+                {p.edenCode}
+              </span>
+            ))
+          : "—"}
       </div>
     </div>
   );

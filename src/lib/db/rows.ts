@@ -49,6 +49,11 @@ export interface TaskRow {
   geography: string | null;
   is_milestone: 0 | 1;
   progress_percent: number | null;
+  deadline: string | null;
+  blocker: string | null;
+  waiting_for: string | null;
+  notes: string | null;
+  splittable: 0 | 1 | null;
   sort_order: number;
   trello_card_id: string | null;
   trello_card_url: string | null;

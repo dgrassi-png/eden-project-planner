@@ -88,6 +88,10 @@ export function GanttLayer({
           key: link.dependencyId,
           d: dependencyPath({ x: from.end, y: centerY(predecessor.index) }, { x: to.start, y: centerY(index) }, ROW_HEIGHT_PX),
           highlighted: selectedId === row.id || selectedId === predecessor.row.id,
+          violated: link.state === "violated",
+          title: link.state === "violated"
+            ? `${predecessor.row.edenCode} → ${row.edenCode}: ${link.conflictDays}-day conflict (earliest start ${link.earliestStart})`
+            : `${predecessor.row.edenCode} → ${row.edenCode}${link.lagDays ? ` (+${link.lagDays} wd lag)` : ""}`,
         },
       ];
     }),
@@ -130,16 +134,23 @@ export function GanttLayer({
           <marker id="gantt-arrow-active" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
             <path d="M 0 0 L 8 4 L 0 8 z" className="fill-blue-600" />
           </marker>
+          <marker id="gantt-arrow-violated" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 8 4 L 0 8 z" className="fill-red-600" />
+          </marker>
         </defs>
         {arrows.map((arrow) => (
           <path
             key={arrow.key}
             d={arrow.d}
             fill="none"
-            strokeWidth={arrow.highlighted ? 1.5 : 1}
-            className={arrow.highlighted ? "stroke-blue-600" : "stroke-neutral-400"}
-            markerEnd={`url(#${arrow.highlighted ? "gantt-arrow-active" : "gantt-arrow"})`}
-          />
+            strokeWidth={arrow.highlighted || arrow.violated ? 1.5 : 1}
+            strokeDasharray={arrow.violated ? "4 2" : undefined}
+            className={arrow.violated ? "stroke-red-600" : arrow.highlighted ? "stroke-blue-600" : "stroke-neutral-400"}
+            markerEnd={`url(#${arrow.violated ? "gantt-arrow-violated" : arrow.highlighted ? "gantt-arrow-active" : "gantt-arrow"})`}
+            data-violated={arrow.violated || undefined}
+          >
+            <title>{arrow.title}</title>
+          </path>
         ))}
       </svg>
 

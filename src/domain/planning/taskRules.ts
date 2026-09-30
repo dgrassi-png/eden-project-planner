@@ -10,6 +10,8 @@ export const TASK_TITLE_MAX = 200;
 export const TASK_DESCRIPTION_MAX = 10_000;
 /** Sanity bound (~4 years of working days) to catch typos. */
 export const TASK_DURATION_MAX_DAYS = 1_000;
+export const TASK_CONTEXT_MAX = 2_000;
+export const TASK_NOTES_MAX = 10_000;
 
 /** Fields a user may set when creating a task. */
 export interface NewTaskInput {
@@ -27,6 +29,11 @@ export interface NewTaskInput {
   geography?: Geography | null;
   isMilestone?: boolean;
   progressPercent?: number | null;
+  deadline?: IsoDate | null;
+  blocker?: string | null;
+  waitingFor?: string | null;
+  notes?: string | null;
+  splittable?: boolean | null;
   sortOrder?: number;
 }
 
@@ -50,6 +57,11 @@ export interface TaskDraft {
   geography: Geography | null;
   isMilestone: boolean;
   progressPercent: number | null;
+  deadline: IsoDate | null;
+  blocker: string | null;
+  waitingFor: string | null;
+  notes: string | null;
+  splittable: boolean | null;
   sortOrder: number;
 }
 
@@ -112,6 +124,21 @@ function validateFields(fields: PlanningFields, ctx: TaskRuleContext, issues: Is
   if (progress !== null && (!Number.isInteger(progress) || progress < 0 || progress > 100))
     issues.push(issue("PROGRESS_RANGE", "Progress must be a whole number from 0 to 100", "progressPercent"));
 
+  if (fields.deadline !== null) {
+    try {
+      parseIsoDate(fields.deadline);
+    } catch {
+      issues.push(issue("DEADLINE_INVALID", "Deadline must be a valid YYYY-MM-DD date", "deadline"));
+    }
+  }
+  for (const [key, label] of [["blocker", "Blocker"], ["waitingFor", "Waiting for"]] as const) {
+    const value = fields[key];
+    if (value && value.length > TASK_CONTEXT_MAX)
+      issues.push(issue("TEXT_TOO_LONG", `${label} must be at most ${TASK_CONTEXT_MAX} characters`, key));
+  }
+  if (fields.notes && fields.notes.length > TASK_NOTES_MAX)
+    issues.push(issue("TEXT_TOO_LONG", `Notes must be at most ${TASK_NOTES_MAX} characters`, "notes"));
+
   if (!Number.isInteger(fields.sortOrder))
     issues.push(issue("SORT_ORDER_INVALID", "Sort order must be an integer", "sortOrder"));
 }
@@ -169,6 +196,11 @@ export function prepareNewTask(input: NewTaskInput, ctx: TaskRuleContext): Resul
     geography: input.geography ?? null,
     isMilestone,
     progressPercent: input.progressPercent ?? null,
+    deadline: input.deadline ?? null,
+    blocker: normalizeText(input.blocker),
+    waitingFor: normalizeText(input.waitingFor),
+    notes: normalizeText(input.notes),
+    splittable: input.splittable ?? null,
     sortOrder: input.sortOrder ?? 0,
   };
   // Workstream errors are already reported above when missing.
@@ -226,6 +258,11 @@ export function prepareTaskUpdate(current: Task, patch: TaskPatch, ctx: TaskRule
     geography: pick("geography", current.geography) ?? null,
     isMilestone,
     progressPercent: pick("progressPercent", current.progressPercent) ?? null,
+    deadline: pick("deadline", current.deadline) ?? null,
+    blocker: patch.blocker === undefined ? current.blocker : normalizeText(patch.blocker),
+    waitingFor: patch.waitingFor === undefined ? current.waitingFor : normalizeText(patch.waitingFor),
+    notes: patch.notes === undefined ? current.notes : normalizeText(patch.notes),
+    splittable: patch.splittable === undefined ? current.splittable : patch.splittable,
     sortOrder: patch.sortOrder ?? current.sortOrder,
   };
   validateFields(merged, ctx, issues);

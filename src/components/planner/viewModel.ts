@@ -1,5 +1,6 @@
 import { scheduleState } from "@/domain/planning/calendar";
 import { buildPlanningTree } from "@/domain/planning/hierarchy";
+import { checkDependencies, type DependencyCheck } from "@/domain/planning/scheduling";
 import type { PlanningSnapshot, Task } from "@/domain/planning/types";
 
 import type { DatabasePlannerData, DependencyLink, PlannerRow, TaskRow } from "./types";
@@ -10,12 +11,22 @@ export function toPlannerData(snapshot: PlanningSnapshot): DatabasePlannerData {
   const membersById = new Map(snapshot.members.map((m) => [m.id, m]));
   const workstreamsById = new Map(snapshot.workstreams.map((w) => [w.id, w]));
 
-  const link = (dependencyId: string, taskId: string, lagDays: number): DependencyLink => ({
-    dependencyId,
-    taskId,
-    edenCode: tasksById.get(taskId)?.edenCode ?? "?",
-    lagDays,
-  });
+  const checks = new Map<string, DependencyCheck>(
+    checkDependencies(snapshot.tasks, snapshot.dependencies).map((c) => [c.dependencyId, c]),
+  );
+
+  const link = (dependencyId: string, taskId: string, lagDays: number): DependencyLink => {
+    const check = checks.get(dependencyId);
+    return {
+      dependencyId,
+      taskId,
+      edenCode: tasksById.get(taskId)?.edenCode ?? "?",
+      lagDays,
+      state: check?.state ?? "unknown",
+      conflictDays: check?.conflictDays ?? 0,
+      earliestStart: check?.earliestStart ?? null,
+    };
+  };
 
   const toRow = (task: Task, depth: number, hasSubtasks: boolean): TaskRow => {
     const predecessors = snapshot.dependencies
@@ -49,6 +60,13 @@ export function toPlannerData(snapshot: PlanningSnapshot): DatabasePlannerData {
       priority: task.priority,
       geography: task.geography,
       progressPercent: task.progressPercent,
+      deadline: task.deadline,
+      pastDeadline: task.deadline !== null && task.plannedFinish !== null && task.plannedFinish > task.deadline,
+      blocker: task.blocker,
+      waitingFor: task.waitingFor,
+      notes: task.notes,
+      splittable: task.splittable,
+      hasConflict: predecessors.some((p) => p.state === "violated"),
       predecessorCodes: predecessors.map((p) => p.edenCode),
       predecessors,
       successors,

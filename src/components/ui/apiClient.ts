@@ -8,7 +8,7 @@ interface ErrorBody {
   error?: { message?: string; issues?: Issue[] };
 }
 
-export async function apiRequest<T = unknown>(method: "POST" | "PATCH" | "DELETE", url: string, body?: unknown): Promise<ApiResult<T>> {
+export async function apiRequest<T = unknown>(method: "GET" | "POST" | "PATCH" | "DELETE", url: string, body?: unknown): Promise<ApiResult<T>> {
   let response: Response;
   try {
     response = await fetch(url, {

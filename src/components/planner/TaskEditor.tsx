@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { Button, FormError, FormField, inputClass, PanelSection } from "@/components/ui/form";
 import { apiRequest } from "@/components/ui/apiClient";
@@ -18,6 +19,8 @@ import {
 } from "@/domain/planning/constants";
 
 import { DependencyEditor } from "./DependencyEditor";
+import { ConflictSection } from "./impact/ConflictSection";
+import { useImpactCheckedSave } from "./impact/useImpactCheckedSave";
 import { SidePanel } from "./SidePanel";
 import type { DatabasePlannerData, TaskRow } from "./types";
 
@@ -61,8 +64,17 @@ export function TaskEditor({
   const [geography, setGeography] = useState(task.geography ?? "");
   const [isMilestone, setIsMilestone] = useState(task.isMilestone);
   const [progress, setProgress] = useState(task.progressPercent === null ? "" : String(task.progressPercent));
+  const [deadline, setDeadline] = useState(task.deadline ?? "");
+  const [blocker, setBlocker] = useState(task.blocker ?? "");
+  const [waitingFor, setWaitingFor] = useState(task.waitingFor ?? "");
+  const [notes, setNotes] = useState(task.notes ?? "");
+  const [splittable, setSplittable] = useState(task.splittable === null ? "" : task.splittable ? "yes" : "no");
   const [localError, setLocalError] = useState<string | null>(null);
-  const save = useMutation();
+  const [saveError, setSaveError] = useState<{ message: string; issues: { code: string; message: string }[] } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
+  const [refreshing, startTransition] = useTransition();
+  const impactSave = useImpactCheckedSave();
   const remove = useMutation();
 
   const parsedDuration = isMilestone ? 0 : parseOptionalInt(duration);
@@ -83,6 +95,11 @@ export function TaskEditor({
       geography: (geography || null) as Geography | null,
       isMilestone,
       progressPercent: parsedProgress,
+      deadline: deadline || null,
+      blocker: blocker.trim() || null,
+      waitingFor: waitingFor.trim() || null,
+      notes: notes.trim() || null,
+      splittable: splittable === "" ? null : splittable === "yes",
     };
     const current: Record<string, unknown> = {
       title: task.title,
@@ -96,6 +113,11 @@ export function TaskEditor({
       geography: task.geography,
       isMilestone: task.isMilestone,
       progressPercent: task.progressPercent,
+      deadline: task.deadline,
+      blocker: task.blocker,
+      waitingFor: task.waitingFor,
+      notes: task.notes,
+      splittable: task.splittable,
     };
     return Object.fromEntries(Object.entries(next).filter(([key, value]) => value !== current[key]));
   }
@@ -105,7 +127,15 @@ export function TaskEditor({
     setLocalError(null);
     const patch = buildPatch();
     if (!patch || !Object.keys(patch).length) return;
-    await save.run(() => apiRequest("PATCH", `/api/tasks/${task.id}`, { ...patch, expectedUpdatedAt: task.updatedAt }));
+    setSaving(true);
+    setSaveError(null);
+    const result = await impactSave.save(task.id, patch, task.updatedAt);
+    setSaving(false);
+    if (!result.ok) {
+      if (result.message !== "cancelled") setSaveError({ message: result.message, issues: result.issues });
+      return;
+    }
+    startTransition(() => router.refresh());
   }
 
   async function onDelete() {
@@ -222,12 +252,32 @@ export function TaskEditor({
           <FormField label="Progress %">
             <input inputMode="numeric" className={inputClass} value={progress} onChange={(e) => setProgress(e.target.value)} placeholder="Not tracked" />
           </FormField>
+          <FormField label="Deadline" hint={task.pastDeadline ? "Planned finish is after the deadline" : "External due date"}>
+            <input type="date" className={inputClass} value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          </FormField>
+          <FormField label="Splittable" hint="Can it be split into shorter blocks?">
+            <select className={inputClass} value={splittable} onChange={(e) => setSplittable(e.target.value)}>
+              <option value="">TBD</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </FormField>
         </div>
 
-        <FormError message={localError ?? save.error?.message ?? null} issues={localError ? [] : save.error?.issues} />
+        <FormField label="Blocker">
+          <input className={inputClass} value={blocker} onChange={(e) => setBlocker(e.target.value)} maxLength={2000} placeholder="None recorded" />
+        </FormField>
+        <FormField label="Waiting for">
+          <input className={inputClass} value={waitingFor} onChange={(e) => setWaitingFor(e.target.value)} maxLength={2000} placeholder="Nothing recorded" />
+        </FormField>
+        <FormField label="Notes">
+          <textarea className={`${inputClass} min-h-12`} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={10000} />
+        </FormField>
+
+        <FormError message={localError ?? saveError?.message ?? null} issues={localError ? [] : saveError?.issues} />
         <div className="flex items-center gap-2">
-          <Button tone="primary" type="submit" disabled={save.busy}>
-            {save.busy ? "Saving…" : "Save"}
+          <Button tone="primary" type="submit" disabled={saving || refreshing}>
+            {saving || refreshing ? "Saving…" : "Save"}
           </Button>
           {task.parentTaskId === null && !task.isMilestone ? (
             <Button onClick={() => onAddSubtask(task.id)}>+ Subtask</Button>
@@ -235,6 +285,7 @@ export function TaskEditor({
         </div>
       </form>
 
+      <ConflictSection task={task} />
       <DependencyEditor task={task} data={data} />
 
       <PanelSection title="Trello">
@@ -250,6 +301,7 @@ export function TaskEditor({
         </Button>
         {task.hasSubtasks ? <p className="mt-1 text-[11px] text-neutral-400">Delete its subtasks first.</p> : null}
       </div>
+      {impactSave.dialog}
     </SidePanel>
   );
 }

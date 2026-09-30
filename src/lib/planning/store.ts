@@ -2,9 +2,22 @@ import type { MemberDraft, ProjectDraft, WorkstreamDraft } from "@/domain/planni
 import type { TaskChanges, TaskDraft } from "@/domain/planning/taskRules";
 import type { Member, Project, Task, TaskDependency, Workstream } from "@/domain/planning/types";
 
+/** One step of an atomic batch (cascade, proposal apply). IDs of new rows are chosen by the caller. */
+export type BatchOp =
+  | { kind: "createTask"; id: string; draft: TaskDraft }
+  | { kind: "updateTask"; id: string; changes: TaskChanges; expectedUpdatedAt: string }
+  | {
+      kind: "createDependency";
+      id: string;
+      projectId: string;
+      input: Pick<TaskDependency, "predecessorTaskId" | "successorTaskId" | "lagDays">;
+    }
+  | { kind: "updateDependency"; id: string; lagDays: number }
+  | { kind: "deleteDependency"; id: string };
+
 /**
- * Persistence port for planning data. The SQLite implementation is the
- * only production store; an in-memory implementation backs service tests.
+ * Persistence port for planning data, implemented on SQLite
+ * (`sqliteStore.ts`; tests use an in-memory SQLite database).
  * Implementations throw `PlanningError` on failure.
  */
 export interface PlanningStore {
@@ -36,4 +49,11 @@ export interface PlanningStore {
   ): Promise<TaskDependency>;
   updateDependency(id: string, lagDays: number): Promise<TaskDependency>;
   deleteDependency(id: string): Promise<void>;
+
+  /**
+   * Applies every op in one transaction, or none. A task whose version no
+   * longer matches `expectedUpdatedAt` aborts the batch with STALE_EDIT.
+   * `metadata` is added to each audit event (e.g. `{ cascade_from: "TEC-001" }`).
+   */
+  applyBatch(ops: BatchOp[], metadata?: Record<string, unknown>): Promise<void>;
 }

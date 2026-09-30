@@ -347,3 +347,40 @@ longer used.
 - **Trello (item 5).** The Planner → Trello sync (Phase 04) is confirmed. It is
   one-way, previewed, idempotent and planner-owned, and it does not revive the
   removed `task_intelligence` (no email-to-task, no scoring).
+
+## D-020: Dependency scheduling engine (Phase 03)
+
+Pure engine in `src/domain/planning/scheduling.ts`, used by the service, the
+API and the Gantt.
+
+- **Finish-to-Start rule.** A successor may start on the first working day
+  after its predecessor's finish, plus `lag` working days (lag 2 after a
+  Friday finish → Wednesday). A milestone successor may fall on any calendar
+  day after that point. Conflict size is counted in working days for tasks and
+  calendar days for milestones.
+- **States.** Each dependency is `ok`, `violated`, `unknown` (the predecessor
+  has no finish or the successor no start: nothing is guessed) or `inactive`
+  (either side is CANCELLED).
+- **Nothing moves silently.** A drag or an edit that creates a conflict opens
+  the impact dialog ("Moving TEC-001 creates a 5-day conflict with TEC-002")
+  with three choices: cancel, save and keep the conflict, or cascade.
+- **Cascade** is explicit and forward-only. It walks the tasks downstream of
+  the changed task in topological order and moves each one to the earliest
+  start its predecessors allow (the latest constraint wins, including
+  predecessors outside the chain), keeping its duration. It never moves a task
+  earlier, never gives an unscheduled task a date, and never moves DONE or
+  CANCELLED tasks: those are listed as blocked and keep their conflict.
+- **Previewed = applied.** The client sends back the moves it showed. The
+  server re-plans and refuses with 409 `CASCADE_CHANGED` if the plan differs.
+  The change and all moves are written in one transaction (`applyBatch`), and
+  each audit event carries `metadata.cascade_from`.
+- **API.** `POST /api/tasks/:id/impact` (preview, saves nothing);
+  `PATCH /api/tasks/:id` with `cascade: { moves }`; `GET|POST /api/tasks/:id/cascade`
+  (resolve existing downstream conflicts); `GET /api/projects/:id/schedule`
+  (all checks).
+- **New nullable task fields** (migration 0002): `deadline` (external due date,
+  never derived; the planner flags a finish after it), `blocker`,
+  `waiting_for`, `notes`, `splittable` (yes/no/unknown, Product Definition
+  §27). Unknown stays NULL.
+- The in-memory test store was removed: every service test runs on a real
+  in-memory SQLite database with the production migrations.

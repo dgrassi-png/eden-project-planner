@@ -25,6 +25,11 @@ Dependencies:
 - POST /api/dependencies
 - PATCH/DELETE /api/dependencies/:id
 
+Scheduling (Phase 03, D-020):
+- POST /api/tasks/:id/impact (preview a change; saves nothing)
+- GET/POST /api/tasks/:id/cascade (preview / apply the reviewed cascade)
+- GET /api/projects/:id/schedule (dependency checks)
+
 Trello:
 - POST /api/tasks/:id/sync-trello
 - POST /api/projects/:id/sync-trello

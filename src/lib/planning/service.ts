@@ -10,14 +10,40 @@ import {
   prepareNewTask,
   prepareTaskUpdate,
   type NewTaskInput,
+  type TaskChanges,
   type TaskPatch,
   type TaskRuleContext,
 } from "@/domain/planning/taskRules";
+import {
+  checkDependencies,
+  describeImpact,
+  impactOfChange,
+  planCascade,
+  type CascadePlan,
+  type DependencyCheck,
+} from "@/domain/planning/scheduling";
 import type { Member, PlanningSnapshot, Project, Task, TaskDependency, Workstream } from "@/domain/planning/types";
 import type { Result } from "@/domain/result";
 
 import { PlanningError } from "./errors";
-import type { PlanningStore } from "./store";
+import type { BatchOp, PlanningStore } from "./store";
+
+/** The cascade moves the user reviewed; the server re-plans and refuses if they no longer match. */
+export interface CascadeConfirmation {
+  moves: { taskId: string; toStart: string }[];
+}
+
+export interface TaskImpactPreview {
+  taskId: string;
+  edenCode: string;
+  /** Fields that would change, planned finish re-derived. */
+  changes: TaskChanges;
+  /** Readable conflict messages, e.g. "Moving TEC-001 creates a 5-day conflict with TEC-002." */
+  messages: string[];
+  created: DependencyCheck[];
+  resolved: DependencyCheck[];
+  cascade: CascadePlan;
+}
 
 function valueOrThrow<T>(result: Result<T>): T {
   if (!result.ok) throw PlanningError.validation(result.issues);
@@ -133,16 +159,90 @@ export class PlanningService {
 
   /**
    * Applies a patch. Pass `expectedUpdatedAt` (the version the editor loaded)
-   * to reject edits based on stale data instead of overwriting them.
+   * to reject edits based on stale data instead of overwriting them. Other
+   * tasks are never moved, unless `cascade` confirms the reviewed moves: then
+   * the change and the cascade are applied together, atomically.
    */
-  async updateTask(id: string, patch: TaskPatch, expectedUpdatedAt?: string): Promise<Task> {
+  async updateTask(id: string, patch: TaskPatch, expectedUpdatedAt?: string, cascade?: CascadeConfirmation): Promise<Task> {
     const current = await this.getTask(id);
     if (expectedUpdatedAt !== undefined && expectedUpdatedAt !== current.updatedAt) throw staleEdit(current);
-    const changes = valueOrThrow(prepareTaskUpdate(current, patch, await this.ruleContext(current.projectId)));
+    const ctx = await this.ruleContext(current.projectId);
+    const changes = valueOrThrow(prepareTaskUpdate(current, patch, ctx));
+    if (cascade) {
+      const next = { ...current, ...changes };
+      const dependencies = await this.store.listDependencies(current.projectId);
+      const plan = planCascade(ctx.tasks as Task[], dependencies, id, new Map([[id, next]]));
+      const ops: BatchOp[] = [];
+      if (Object.keys(changes).length) ops.push({ kind: "updateTask", id, changes, expectedUpdatedAt: current.updatedAt });
+      ops.push(...this.cascadeOps(plan, cascade, ctx));
+      if (ops.length) await this.store.applyBatch(ops, { cascade_from: current.edenCode });
+      return this.getTask(id);
+    }
     if (!Object.keys(changes).length) return current;
     const updated = await this.store.updateTask(id, changes, current.updatedAt);
     if (!updated) throw staleEdit(current);
     return updated;
+  }
+
+  /** What a patch would do to the schedule, without saving anything. */
+  async previewTaskUpdate(id: string, patch: TaskPatch): Promise<TaskImpactPreview> {
+    const current = await this.getTask(id);
+    const ctx = await this.ruleContext(current.projectId);
+    const changes = valueOrThrow(prepareTaskUpdate(current, patch, ctx));
+    const dependencies = await this.store.listDependencies(current.projectId);
+    const impact = impactOfChange(ctx.tasks as Task[], dependencies, id, { ...current, ...changes });
+    return {
+      taskId: id,
+      edenCode: current.edenCode,
+      changes,
+      messages: describeImpact(current.edenCode, impact),
+      created: impact.created,
+      resolved: impact.resolved,
+      cascade: impact.cascade,
+    };
+  }
+
+  /** Cascade plan that would resolve the conflicts downstream of a task as it is now. */
+  async previewCascade(id: string): Promise<CascadePlan> {
+    const current = await this.getTask(id);
+    const [tasks, dependencies] = await Promise.all([
+      this.store.listTasks(current.projectId),
+      this.store.listDependencies(current.projectId),
+    ]);
+    return planCascade(tasks, dependencies, id);
+  }
+
+  /** Applies the reviewed cascade downstream of a task, without changing the task itself. */
+  async applyCascade(id: string, confirmation: CascadeConfirmation): Promise<CascadePlan> {
+    const current = await this.getTask(id);
+    const ctx = await this.ruleContext(current.projectId);
+    const plan = planCascade(ctx.tasks as Task[], await this.store.listDependencies(current.projectId), id);
+    const ops = this.cascadeOps(plan, confirmation, ctx);
+    if (ops.length) await this.store.applyBatch(ops, { cascade_from: current.edenCode });
+    return plan;
+  }
+
+  /** Dependency checks of a project (ok / violated / unknown / inactive). */
+  async scheduleChecks(projectId: string): Promise<DependencyCheck[]> {
+    await this.requireProject(projectId);
+    const [tasks, dependencies] = await Promise.all([this.store.listTasks(projectId), this.store.listDependencies(projectId)]);
+    return checkDependencies(tasks, dependencies);
+  }
+
+  private cascadeOps(plan: CascadePlan, confirmation: CascadeConfirmation, ctx: TaskRuleContext): BatchOp[] {
+    const planned = plan.moves.map((m) => `${m.taskId}:${m.toStart}`).sort();
+    const confirmed = confirmation.moves.map((m) => `${m.taskId}:${m.toStart}`).sort();
+    if (planned.join(",") !== confirmed.join(",")) {
+      throw PlanningError.conflict("The cascade changed since it was previewed; review it again", [
+        { code: "CASCADE_CHANGED", message: "The cascade changed since it was previewed" },
+      ]);
+    }
+    const tasks = ctx.tasks as Task[];
+    return plan.moves.map((move) => {
+      const task = tasks.find((t) => t.id === move.taskId) as Task;
+      const changes = valueOrThrow(prepareTaskUpdate(task, { plannedStart: move.toStart }, ctx));
+      return { kind: "updateTask", id: task.id, changes, expectedUpdatedAt: task.updatedAt };
+    });
   }
 
   async deleteTask(id: string): Promise<void> {

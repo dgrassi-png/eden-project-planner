@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
 
-import { apiRequest } from "@/components/ui/apiClient";
 import { nextWorkingDayOnOrAfter } from "@/domain/planning/calendar";
 import { addDays, diffDays, type IsoDate } from "@/domain/timeline/dates";
 import { previewDates, type GanttTaskDates } from "@/domain/timeline/gantt";
@@ -11,6 +10,7 @@ import { buildTimelineAxis, rangeForDates, type ZoomLevel } from "@/domain/timel
 
 import { isUnscheduled } from "./format";
 import { GanttLayer, type DateChange } from "./gantt/GanttLayer";
+import { useImpactCheckedSave } from "./impact/useImpactCheckedSave";
 import { HEADER_HEIGHT_PX, ROW_HEIGHT_PX, TABLE_WIDTH_PX } from "./layout";
 import { NewTaskPanel } from "./NewTaskPanel";
 import { NoticeBar, type Notice } from "./NoticeBar";
@@ -42,7 +42,7 @@ function describeChange(row: TaskRow, dates: GanttTaskDates): string {
   if (row.isMilestone) return `${row.edenCode} moved to ${dates.plannedStart}.`;
   return `${row.edenCode} now ${dates.plannedStart} → ${dates.plannedFinish ?? "TBD"}${
     dates.plannedDurationDays !== null ? ` (${dates.plannedDurationDays} working days)` : ""
-  }. Successors were not moved.`;
+  }.`;
 }
 
 /**
@@ -63,6 +63,7 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
   const [notice, setNotice] = useState<Notice | null>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const editable = data.source === "database";
+  const impactSave = useImpactCheckedSave();
 
   const tasks = useMemo(() => data.rows.filter((row): row is TaskRow => row.kind === "task"), [data.rows]);
   const datesKey = tasks.flatMap((t) => [t.plannedStart, t.plannedFinish]).filter((d): d is string => d !== null).join(",");
@@ -126,14 +127,14 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
     const dates = previewDates(pendingDates.get(row.id) ?? row, change);
     setPending((current) => new Map(current).set(row.id, { baseUpdatedAt: row.updatedAt, dates }));
     setNotice(null);
-    const result = await apiRequest("PATCH", `/api/tasks/${row.id}`, { ...change, expectedUpdatedAt: row.updatedAt });
+    const result = await impactSave.save(row.id, { ...change }, row.updatedAt);
     if (!result.ok) {
       setPending((current) => {
         const next = new Map(current);
         next.delete(row.id);
         return next;
       });
-      setNotice({ tone: "error", message: `${row.edenCode} not changed: ${result.message}` });
+      if (result.message !== "cancelled") setNotice({ tone: "error", message: `${row.edenCode} not changed: ${result.message}` });
       startTransition(() => router.refresh());
       return;
     }
@@ -331,6 +332,7 @@ export function PlannerWorkspace({ data, today }: { data: PlannerData; today: Is
 
         {renderPanel()}
       </div>
+      {impactSave.dialog}
     </div>
   );
 }

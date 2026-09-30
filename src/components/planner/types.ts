@@ -1,4 +1,5 @@
 import type { ScheduleState } from "@/domain/planning/calendar";
+import type { DependencyState } from "@/domain/planning/scheduling";
 import type { Geography, TaskPriority, TaskStatus, TrelloSyncState } from "@/domain/planning/constants";
 import type { IsoDate } from "@/domain/timeline/dates";
 
@@ -23,6 +24,10 @@ export interface DependencyLink {
   taskId: string;
   edenCode: string;
   lagDays: number;
+  state: DependencyState;
+  /** Days the successor would have to move forward (0 unless violated). */
+  conflictDays: number;
+  earliestStart: IsoDate | null;
 }
 
 export interface TaskRow {
@@ -49,6 +54,15 @@ export interface TaskRow {
   priority: TaskPriority | null;
   geography: Geography | null;
   progressPercent: number | null;
+  deadline: IsoDate | null;
+  /** Planned finish is after the deadline. */
+  pastDeadline: boolean;
+  blocker: string | null;
+  waitingFor: string | null;
+  notes: string | null;
+  splittable: boolean | null;
+  /** At least one predecessor constraint is violated. */
+  hasConflict: boolean;
   predecessorCodes: string[];
   predecessors: DependencyLink[];
   successors: DependencyLink[];

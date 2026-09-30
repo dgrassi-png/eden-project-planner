@@ -71,6 +71,13 @@ export interface Task {
   geography: Geography | null;
   isMilestone: boolean;
   progressPercent: number | null;
+  /** External due date (not derived). */
+  deadline: IsoDate | null;
+  blocker: string | null;
+  waitingFor: string | null;
+  notes: string | null;
+  /** Whether the work can be split into shorter blocks (Personal Assistant); null = unknown. */
+  splittable: boolean | null;
   sortOrder: number;
   trelloCardId: string | null;
   trelloCardUrl: string | null;

@@ -41,9 +41,30 @@ describe("prepareNewTask", () => {
         geography: null,
         isMilestone: false,
         progressPercent: null,
+        deadline: null,
+        blocker: null,
+        waitingFor: null,
+        notes: null,
+        splittable: null,
         sortOrder: 0,
       },
     });
+  });
+
+  it("keeps operational context and rejects malformed deadlines", () => {
+    const result = prepareNewTask(
+      { edenCode: "TEC-002", title: "x", workstreamId: "ws-1", blocker: "  supplier  ", waitingFor: " ", splittable: false, deadline: "2026-10-30" },
+      ctx,
+    );
+    expect(result.ok && [result.value.blocker, result.value.waitingFor, result.value.splittable, result.value.deadline]).toEqual([
+      "supplier",
+      null,
+      false,
+      "2026-10-30",
+    ]);
+    expect(issueCodes(prepareNewTask({ edenCode: "TEC-002", title: "x", workstreamId: "ws-1", deadline: "2026-02-30" }, ctx))).toEqual([
+      "DEADLINE_INVALID",
+    ]);
   });
 
   it("derives planned finish from working days", () => {

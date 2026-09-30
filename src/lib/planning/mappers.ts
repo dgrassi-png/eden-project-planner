@@ -62,6 +62,11 @@ export function toTask(row: TaskRow): Task {
     geography: row.geography as Geography | null,
     isMilestone: row.is_milestone === 1,
     progressPercent: row.progress_percent,
+    deadline: row.deadline,
+    blocker: row.blocker,
+    waitingFor: row.waiting_for,
+    notes: row.notes,
+    splittable: row.splittable === null ? null : row.splittable === 1,
     sortOrder: row.sort_order,
     trelloCardId: row.trello_card_id,
     trelloCardUrl: row.trello_card_url,
@@ -95,6 +100,11 @@ export const TASK_COLUMNS = {
   geography: "geography",
   isMilestone: "is_milestone",
   progressPercent: "progress_percent",
+  deadline: "deadline",
+  blocker: "blocker",
+  waitingFor: "waiting_for",
+  notes: "notes",
+  splittable: "splittable",
   sortOrder: "sort_order",
 } as const satisfies Record<keyof TaskChanges, keyof TaskRow>;
 

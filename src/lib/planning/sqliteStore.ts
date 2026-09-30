@@ -2,13 +2,14 @@ import { randomUUID } from "node:crypto";
 
 import type BetterSqlite3 from "better-sqlite3";
 
-import type { TaskChanges } from "@/domain/planning/taskRules";
+import type { TaskChanges, TaskDraft } from "@/domain/planning/taskRules";
+import type { TaskDependency } from "@/domain/planning/types";
 import type { MemberRow, ProjectRow, TaskDependencyRow, TaskRow, WorkstreamRow } from "@/lib/db/rows";
 
 import type { Actor } from "./actor";
 import { fromSqliteError, PlanningError, type SqliteLikeError } from "./errors";
 import { taskChangesToColumns, toDependency, toMember, toProject, toTask, toWorkstream } from "./mappers";
-import type { PlanningStore } from "./store";
+import type { BatchOp, PlanningStore } from "./store";
 
 type Db = BetterSqlite3.Database;
 type Row = Record<string, unknown>;
@@ -24,6 +25,12 @@ function isSqliteError(error: unknown): error is SqliteLikeError {
   return error instanceof Error && typeof code === "string" && code.startsWith("SQLITE");
 }
 
+function staleBatch(): PlanningError {
+  return PlanningError.conflict("The plan changed while this change was being prepared; review it again", [
+    { code: "STALE_EDIT", message: "The plan changed while this change was being prepared" },
+  ]);
+}
+
 function changedFields(before: Row, after: Row): string[] {
   return Object.keys(after)
     .filter((key) => key !== "updated_at" && before[key] !== after[key])
@@ -36,6 +43,8 @@ function changedFields(before: Row, after: Row): string[] {
  * change + audit in the same transaction), attributed to `actor`.
  */
 export function createSqlitePlanningStore(db: Db, actor: Actor): PlanningStore {
+  /** Extra audit metadata for the operation in progress (e.g. cascade or proposal id). */
+  let context: Row = {};
   const get = <T>(sql: string, ...params: unknown[]) => (db.prepare(sql).get(...params) as T | undefined) ?? null;
   const all = <T>(sql: string, ...params: unknown[]) => db.prepare(sql).all(...params) as T[];
 
@@ -47,7 +56,7 @@ export function createSqlitePlanningStore(db: Db, actor: Actor): PlanningStore {
     before?: Row | null;
     after?: Row | null;
   }) {
-    const metadata: Row = { source: "planner" };
+    const metadata: Row = { source: "planner", ...context };
     if (entry.action === "UPDATE" && entry.before && entry.after) metadata.changed_fields = changedFields(entry.before, entry.after);
     db.prepare(
       `INSERT INTO audit_events (id, project_id, actor_type, actor_id, action, entity_type, entity_id, before_json, after_json, metadata_json, created_at)
@@ -100,6 +109,109 @@ export function createSqlitePlanningStore(db: Db, actor: Actor): PlanningStore {
   const taskRow = (id: string) => get<TaskRow>("SELECT * FROM tasks WHERE id = ?", id);
   const workstreamRow = (id: string) => get<WorkstreamRow>("SELECT * FROM workstreams WHERE id = ?", id);
   const dependencyRow = (id: string) => get<TaskDependencyRow>("SELECT * FROM task_dependencies WHERE id = ?", id);
+
+  function createTaskSync(draft: TaskDraft, id: string = randomUUID()): TaskRow {
+    const now = new Date().toISOString();
+    const row = {
+      ...taskChangesToColumns(draft),
+      id,
+      project_id: draft.projectId,
+      parent_task_id: draft.parentTaskId,
+      eden_code: draft.edenCode,
+      created_at: now,
+      updated_at: now,
+    };
+    insert("tasks", row);
+    const after = taskRow(id) as TaskRow;
+    audit({ action: "CREATE", entityType: "tasks", entityId: after.id, projectId: after.project_id, after: after as unknown as Row });
+    return after;
+  }
+
+  function updateTaskSync(id: string, changes: TaskChanges, expectedUpdatedAt?: string): TaskRow | null {
+    const before = taskRow(id);
+    if (!before || (expectedUpdatedAt !== undefined && before.updated_at !== expectedUpdatedAt)) return null;
+    const updatedAt = timestampAfter(before.updated_at);
+    const childrenBefore =
+      changes.workstreamId !== undefined && changes.workstreamId !== before.workstream_id
+        ? all<TaskRow>("SELECT * FROM tasks WHERE parent_task_id = ?", id)
+        : [];
+    update("tasks", id, { ...taskChangesToColumns(changes), updated_at: updatedAt });
+    const after = taskRow(id) as TaskRow;
+    audit({ action: "UPDATE", entityType: "tasks", entityId: id, projectId: after.project_id, before: before as unknown as Row, after: after as unknown as Row });
+    // Subtasks moved by the workstream trigger are audited too.
+    for (const child of childrenBefore) {
+      const childAfter = taskRow(child.id) as TaskRow;
+      audit({ action: "UPDATE", entityType: "tasks", entityId: child.id, projectId: child.project_id, before: child as unknown as Row, after: childAfter as unknown as Row });
+    }
+    return after;
+  }
+
+  function createDependencySync(
+    projectId: string,
+    input: Pick<TaskDependency, "predecessorTaskId" | "successorTaskId" | "lagDays">,
+    id: string = randomUUID(),
+  ): TaskDependencyRow {
+    // Authoritative cycle check inside the write transaction (writers are serialised).
+    const cycle = get<{ found: number }>(
+      `WITH RECURSIVE downstream(id) AS (
+         SELECT successor_task_id FROM task_dependencies WHERE predecessor_task_id = @successor
+         UNION
+         SELECT d.successor_task_id FROM task_dependencies d JOIN downstream ON d.predecessor_task_id = downstream.id
+       )
+       SELECT 1 AS found FROM downstream WHERE id = @predecessor LIMIT 1`,
+      { successor: input.successorTaskId, predecessor: input.predecessorTaskId },
+    );
+    if (cycle) {
+      throw PlanningError.validation([{ code: "DEPENDENCY_CYCLE", message: "This dependency would create a cycle" }]);
+    }
+    const row: TaskDependencyRow = {
+      id,
+      project_id: projectId,
+      predecessor_task_id: input.predecessorTaskId,
+      successor_task_id: input.successorTaskId,
+      lag_days: input.lagDays,
+      created_at: new Date().toISOString(),
+    };
+    insert("task_dependencies", row as unknown as Row);
+    audit({ action: "CREATE", entityType: "task_dependencies", entityId: row.id, projectId, after: row as unknown as Row });
+    return row;
+  }
+
+  function updateDependencySync(id: string, lagDays: number): TaskDependencyRow {
+    const before = dependencyRow(id);
+    if (!before) throw PlanningError.notFound("Dependency");
+    update("task_dependencies", id, { lag_days: lagDays });
+    const after = dependencyRow(id) as TaskDependencyRow;
+    audit({ action: "UPDATE", entityType: "task_dependencies", entityId: id, projectId: after.project_id, before: before as unknown as Row, after: after as unknown as Row });
+    return after;
+  }
+
+  function deleteDependencySync(id: string): void {
+    const before = dependencyRow(id);
+    if (!before) return;
+    db.prepare("DELETE FROM task_dependencies WHERE id = ?").run(id);
+    audit({ action: "DELETE", entityType: "task_dependencies", entityId: id, projectId: before.project_id, before: before as unknown as Row });
+  }
+
+  function applyOp(op: BatchOp): void {
+    switch (op.kind) {
+      case "createTask":
+        createTaskSync(op.draft, op.id);
+        return;
+      case "updateTask":
+        if (!updateTaskSync(op.id, op.changes, op.expectedUpdatedAt)) throw staleBatch();
+        return;
+      case "createDependency":
+        createDependencySync(op.projectId, op.input, op.id);
+        return;
+      case "updateDependency":
+        updateDependencySync(op.id, op.lagDays);
+        return;
+      case "deleteDependency":
+        deleteDependencySync(op.id);
+        return;
+    }
+  }
 
   return {
     listProjects: () => read(() => all<ProjectRow>("SELECT * FROM projects ORDER BY created_at, id").map(toProject)),
@@ -184,42 +296,11 @@ export function createSqlitePlanningStore(db: Db, actor: Actor): PlanningStore {
       const row = taskRow(id);
       return row && toTask(row);
     }),
-    createTask: (draft) =>
-      write(() => {
-        const now = new Date().toISOString();
-        const id = randomUUID();
-        const row = {
-          ...taskChangesToColumns(draft),
-          id,
-          project_id: draft.projectId,
-          parent_task_id: draft.parentTaskId,
-          eden_code: draft.edenCode,
-          created_at: now,
-          updated_at: now,
-        };
-        insert("tasks", row);
-        const after = taskRow(id) as TaskRow;
-        audit({ action: "CREATE", entityType: "tasks", entityId: after.id, projectId: after.project_id, after: after as unknown as Row });
-        return toTask(after);
-      }),
+    createTask: (draft) => write(() => toTask(createTaskSync(draft))),
     updateTask: (id, changes: TaskChanges, expectedUpdatedAt) =>
       write(() => {
-        const before = taskRow(id);
-        if (!before || (expectedUpdatedAt !== undefined && before.updated_at !== expectedUpdatedAt)) return null;
-        const updatedAt = timestampAfter(before.updated_at);
-        const childrenBefore =
-          changes.workstreamId !== undefined && changes.workstreamId !== before.workstream_id
-            ? all<TaskRow>("SELECT * FROM tasks WHERE parent_task_id = ?", id)
-            : [];
-        update("tasks", id, { ...taskChangesToColumns(changes), updated_at: updatedAt });
-        const after = taskRow(id) as TaskRow;
-        audit({ action: "UPDATE", entityType: "tasks", entityId: id, projectId: after.project_id, before: before as unknown as Row, after: after as unknown as Row });
-        // Subtasks moved by the workstream trigger are audited too.
-        for (const child of childrenBefore) {
-          const childAfter = taskRow(child.id) as TaskRow;
-          audit({ action: "UPDATE", entityType: "tasks", entityId: child.id, projectId: child.project_id, before: child as unknown as Row, after: childAfter as unknown as Row });
-        }
-        return toTask(after);
+        const row = updateTaskSync(id, changes, expectedUpdatedAt);
+        return row && toTask(row);
       }),
     deleteTask: (id) =>
       write(() => {
@@ -243,48 +324,18 @@ export function createSqlitePlanningStore(db: Db, actor: Actor): PlanningStore {
       const row = dependencyRow(id);
       return row && toDependency(row);
     }),
-    createDependency: (projectId, input) =>
+    createDependency: (projectId, input) => write(() => toDependency(createDependencySync(projectId, input))),
+    updateDependency: (id, lagDays) => write(() => toDependency(updateDependencySync(id, lagDays))),
+    deleteDependency: (id) => write(() => deleteDependencySync(id)),
+
+    applyBatch: (ops, metadata = {}) =>
       write(() => {
-        // Authoritative cycle check inside the write transaction (writers are serialised).
-        const cycle = get<{ found: number }>(
-          `WITH RECURSIVE downstream(id) AS (
-             SELECT successor_task_id FROM task_dependencies WHERE predecessor_task_id = @successor
-             UNION
-             SELECT d.successor_task_id FROM task_dependencies d JOIN downstream ON d.predecessor_task_id = downstream.id
-           )
-           SELECT 1 AS found FROM downstream WHERE id = @predecessor LIMIT 1`,
-          { successor: input.successorTaskId, predecessor: input.predecessorTaskId },
-        );
-        if (cycle) {
-          throw PlanningError.validation([{ code: "DEPENDENCY_CYCLE", message: "This dependency would create a cycle" }]);
+        context = metadata;
+        try {
+          for (const op of ops) applyOp(op);
+        } finally {
+          context = {};
         }
-        const row: TaskDependencyRow = {
-          id: randomUUID(),
-          project_id: projectId,
-          predecessor_task_id: input.predecessorTaskId,
-          successor_task_id: input.successorTaskId,
-          lag_days: input.lagDays,
-          created_at: new Date().toISOString(),
-        };
-        insert("task_dependencies", row as unknown as Row);
-        audit({ action: "CREATE", entityType: "task_dependencies", entityId: row.id, projectId, after: row as unknown as Row });
-        return toDependency(row);
-      }),
-    updateDependency: (id, lagDays) =>
-      write(() => {
-        const before = dependencyRow(id);
-        if (!before) throw PlanningError.notFound("Dependency");
-        update("task_dependencies", id, { lag_days: lagDays });
-        const after = dependencyRow(id) as TaskDependencyRow;
-        audit({ action: "UPDATE", entityType: "task_dependencies", entityId: id, projectId: after.project_id, before: before as unknown as Row, after: after as unknown as Row });
-        return toDependency(after);
-      }),
-    deleteDependency: (id) =>
-      write(() => {
-        const before = dependencyRow(id);
-        if (!before) return;
-        db.prepare("DELETE FROM task_dependencies WHERE id = ?").run(id);
-        audit({ action: "DELETE", entityType: "task_dependencies", entityId: id, projectId: before.project_id, before: before as unknown as Row });
       }),
   };
 }
