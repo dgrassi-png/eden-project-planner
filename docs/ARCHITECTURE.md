@@ -39,12 +39,13 @@ Trello (Phase 04, D-021):
 - POST /api/tasks/:id/sync-trello ({ dryRun: true } or { confirm })
 - DELETE /api/tasks/:id/trello-link
 
-AI:
-- GET /api/projects/:id/ai-context
-- POST /api/projects/:id/change-proposals
-- GET /api/change-proposals/:id
-- POST /api/change-proposals/:id/apply
-- POST /api/change-proposals/:id/reject
+AI (Phase 05, D-022; agents use `Authorization: Bearer <token>`):
+- GET /api/projects/:id/ai-context (people, CLAUDE, CHATGPT, ASSISTANT)
+- GET/POST /api/projects/:id/change-proposals (people, CLAUDE, CHATGPT)
+- GET /api/change-proposals/:id (review: diff + impact + fingerprint)
+- POST /api/change-proposals/:id/apply ({ fingerprint }; people only)
+- POST /api/change-proposals/:id/reject ({ note }; people only)
+- POST /api/projects/:id/ai-draft (people only; optional provider keys)
 
 ## Scheduling
 Tasks can be scheduled, partially scheduled, or unscheduled. Default calendar is Monday-Friday. Finish is derived from start + working-day duration. Milestones have zero duration.

@@ -72,7 +72,25 @@ export const serverEnvSchema = z.object({
   /** Test/offline override of the Trello API origin. Refused in production. */
   TRELLO_API_BASE_URL: optionalUrl,
   OPENAI_API_KEY: optionalString,
+  /** OpenAI model for server-side drafting (required to enable it; no default is guessed). */
+  OPENAI_MODEL: optionalString,
   ANTHROPIC_API_KEY: optionalString,
+  /** Anthropic model for server-side drafting. */
+  ANTHROPIC_MODEL: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().min(1).default("claude-opus-5-5"),
+  ),
+  /**
+   * SHA-256 hashes of agent API tokens: `CLAUDE:<hex>,CHATGPT:<hex>,ASSISTANT:<hex>`
+   * (scripts/agent-token.mjs). Agents may read context and submit proposals only.
+   */
+  PLANNER_AGENT_TOKENS: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z
+      .string()
+      .regex(/^\s*(CLAUDE|CHATGPT|ASSISTANT):[0-9a-f]{64}\s*(,\s*(CLAUDE|CHATGPT|ASSISTANT):[0-9a-f]{64}\s*)*$/)
+      .optional(),
+  ),
   AI_MUTATIONS_REQUIRE_APPROVAL: approvalFlag,
 });
 

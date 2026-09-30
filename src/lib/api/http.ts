@@ -6,7 +6,10 @@ import { EnvValidationError } from "@/config/env.schema";
 import type { Issue } from "@/domain/result";
 import { HTTP_STATUS, PlanningError } from "@/lib/planning/errors";
 import { getCurrentPrincipal } from "@/lib/auth/server";
+import { getServerEnv } from "@/config/env.server";
+import { parseAgentTokens, verifyAgentToken, type AgentName, type AgentPrincipal } from "@/lib/auth/agents";
 import { actorFor, type Principal } from "@/lib/auth/session";
+import type { Actor } from "@/lib/planning/actor";
 import { getPlanningService } from "@/lib/planning/server";
 import type { PlanningService } from "@/lib/planning/service";
 
@@ -82,6 +85,10 @@ interface HandlerContext<P> extends ApiContext<P> {
 export function apiRoute<P>(handler: (ctx: ApiContext<P>) => Promise<unknown>, successStatus = 200) {
   return async (request: Request, context: { params: Promise<P> }): Promise<Response> => {
     try {
+      // Agent tokens never act as a person, whatever the auth mode (defence in depth).
+      if (request.headers.get("authorization")?.startsWith("Bearer ")) {
+        return errorResponse(403, "forbidden", "Agent tokens may not call this endpoint");
+      }
       if (isCrossOrigin(request)) return errorResponse(403, "forbidden", "Cross-origin request rejected");
       const principal = await getCurrentPrincipal();
       if (!principal) return errorResponse(401, "unauthenticated", "Sign in with E:DEN Identity");
@@ -102,6 +109,47 @@ export function errorToResponse(error: unknown): Response {
   }
   console.error("Unhandled planning API error", error);
   return errorResponse(500, "internal", "Unexpected server error");
+}
+
+export type Caller = { kind: "user"; principal: Principal } | AgentPrincipal;
+
+/**
+ * Like `apiRoute`, but also accepts agent API tokens (`Authorization: Bearer`)
+ * for the listed agents. A request with a Bearer header is judged only on
+ * the token, never on cookies.
+ */
+export function callerRoute<P>(
+  handler: (ctx: { request: Request; params: P; caller: Caller }) => Promise<unknown>,
+  options: { agents: readonly AgentName[] },
+  successStatus = 200,
+) {
+  return async (request: Request, context: { params: Promise<P> }): Promise<Response> => {
+    try {
+      const authorization = request.headers.get("authorization");
+      let caller: Caller;
+      if (authorization?.startsWith("Bearer ")) {
+        const agent = verifyAgentToken(authorization, parseAgentTokens(getServerEnv().PLANNER_AGENT_TOKENS));
+        if (!agent) return errorResponse(401, "unauthenticated", "Invalid agent token");
+        if (!options.agents.includes(agent.agent)) return errorResponse(403, "forbidden", `${agent.agent} may not call this endpoint`);
+        caller = agent;
+      } else {
+        if (isCrossOrigin(request)) return errorResponse(403, "forbidden", "Cross-origin request rejected");
+        const principal = await getCurrentPrincipal();
+        if (!principal) return errorResponse(401, "unauthenticated", "Sign in with E:DEN Identity");
+        caller = { kind: "user", principal };
+      }
+      const data = await handler({ request, params: await context.params, caller });
+      return data === undefined ? new Response(null, { status: 204 }) : Response.json({ data }, { status: successStatus });
+    } catch (error) {
+      return errorToResponse(error);
+    }
+  };
+}
+
+/** Audit actor of a caller. Agents are attributed to their own actor type. */
+export function actorOfCaller(caller: Caller): Actor {
+  if (caller.kind === "user") return actorFor(caller.principal);
+  return { type: caller.agent === "ASSISTANT" ? "SYSTEM" : caller.agent, id: `agent:${caller.agent}` };
 }
 
 /** `apiRoute` with a planning service acting as the signed-in user. */

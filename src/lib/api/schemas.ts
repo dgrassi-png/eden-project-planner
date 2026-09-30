@@ -119,3 +119,19 @@ export const syncConfirmationSchema = z.strictObject({
     .array(z.strictObject({ taskId: id, action: z.enum(["create", "update", "unchanged", "error", "skip"]) }))
     .max(5_000),
 });
+
+// AI proposals (Phase 05) --------------------------------------------------------
+
+export const submitProposalSchema = z.strictObject({
+  /** Agents may only submit as themselves; people use USER (pasted) or the drafting endpoint. */
+  source: z.enum(["CHATGPT", "CLAUDE", "USER"]).optional(),
+  reason: z.string().max(2_000).nullish(),
+  payload: z.unknown(),
+});
+
+export const applyProposalSchema = z.strictObject({ fingerprint: z.string().regex(/^[0-9a-f]{64}$/) });
+export const rejectProposalSchema = z.strictObject({ note: z.string().max(2_000).nullish() });
+export const draftProposalSchema = z.strictObject({
+  provider: z.enum(["anthropic", "openai"]),
+  instruction: z.string().trim().min(3).max(4_000),
+});

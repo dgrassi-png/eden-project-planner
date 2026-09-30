@@ -77,6 +77,35 @@ export interface TrelloSettingsRow {
   updated_at: string;
 }
 
+export interface ChangeProposalRow {
+  id: string;
+  project_id: string;
+  source: string;
+  reason: string | null;
+  payload: string;
+  status: string;
+  submitted_by: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface AuditEventRow {
+  id: string;
+  project_id: string | null;
+  actor_type: string;
+  actor_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  before_json: string | null;
+  after_json: string | null;
+  metadata_json: string | null;
+  created_at: string;
+}
+
 export interface TaskDependencyRow {
   id: string;
   project_id: string;

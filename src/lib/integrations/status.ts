@@ -22,7 +22,7 @@ export interface IntegrationStatus {
   checks: IntegrationCheck[];
 }
 
-type SecretKey = Exclude<keyof ServerEnv, "AI_MUTATIONS_REQUIRE_APPROVAL" | "PLANNER_AUTH_MODE" | "EDEN_IDENTITY_APP_ID">;
+type SecretKey = Exclude<keyof ServerEnv, "AI_MUTATIONS_REQUIRE_APPROVAL" | "PLANNER_AUTH_MODE" | "EDEN_IDENTITY_APP_ID" | "ANTHROPIC_MODEL">;
 
 function check(env: ServerEnv, envVar: SecretKey): IntegrationCheck {
   return { envVar, present: env[envVar] !== undefined };
@@ -48,7 +48,7 @@ export function getIntegrationStatuses(env: ServerEnv): IntegrationStatus[] {
     check(env, "TRELLO_BOARD_ID"),
   ];
   // AI providers are independent and optional: any one is enough.
-  const ai = [check(env, "OPENAI_API_KEY"), check(env, "ANTHROPIC_API_KEY")];
+  const ai = [check(env, "ANTHROPIC_API_KEY"), check(env, "OPENAI_API_KEY"), check(env, "OPENAI_MODEL"), check(env, "PLANNER_AGENT_TOKENS")];
 
   return [
     { id: "identity", name: "E:DEN Identity (SSO)", state: stateOf(identity, "all"), required: true, checks: identity },

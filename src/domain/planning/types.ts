@@ -103,12 +103,32 @@ export interface TaskDependency {
 export interface ChangeProposal {
   id: string;
   projectId: string;
+  /** Who produced it: CHATGPT, CLAUDE, USER (pasted by a person) or SYSTEM. */
   source: string;
   reason: string | null;
+  /** Structured changes (validated by the proposal schema); untrusted until reviewed. */
   payload: unknown;
   status: ProposalState;
+  /** E:DEN user id or agent name that submitted it. */
+  submittedBy: string | null;
   reviewedBy: string | null;
   reviewedAt: Timestamp | null;
+  reviewNote: string | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface AuditEvent {
+  id: string;
+  projectId: string | null;
+  actorType: string;
+  actorId: string | null;
+  action: "CREATE" | "UPDATE" | "DELETE";
+  entityType: string;
+  entityId: string | null;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  metadata: Record<string, unknown> | null;
   createdAt: Timestamp;
 }
 

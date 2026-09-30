@@ -429,3 +429,43 @@ API and the Gantt.
 - A deleted card is reported ("no longer on the board"). "Unlink" in the task
   panel forgets the link, and the next sync re-links the card by its marker or
   creates a new one. Nothing is ever deleted or archived in Trello.
+
+## D-022: AI change proposals with human approval (Phase 05)
+
+- **Provider-neutral format** (`src/domain/proposals/schema.ts`): a list of
+  `update_task`, `create_task`, `add_dependency`, `update_dependency` and
+  `remove_dependency` changes. Tasks are referenced by E:DEN code and people by
+  name or email. Tasks cannot be deleted through a proposal. A target
+  `plannedFinish` is translated into a duration (or a milestone date), per D-016.
+- **Review** (`simulate.ts`): the proposal is replayed on a copy of the
+  current plan, change by change, with the same domain rules as a manual edit.
+  The review shows every problem with its change number, a BEFORE → PROPOSED
+  table per task and dependency, and the dependency conflicts the proposal
+  creates or resolves. Successors are never moved by a proposal; cascade stays
+  an explicit planner action.
+- **Apply = one transaction.** Only a signed-in person can apply. The request
+  carries the fingerprint of the diff they reviewed; if the plan changed since
+  then, the server answers 409 `PROPOSAL_CHANGED`. The planning writes, the
+  proposal status and their audit events (actor = the approving user,
+  `metadata.proposal_id` / `proposal_source`) are written together. Reviewed
+  proposals are final, and proposals are never deleted (DB triggers).
+- **Agents** (ChatGPT, Claude) authenticate with an API token
+  (`Authorization: Bearer`). The server stores only its SHA-256 in
+  `PLANNER_AGENT_TOKENS` (`scripts/agent-token.mjs` generates one). A token
+  may only list projects, read `/ai-context` and submit or read proposals,
+  always as itself (audit actor `CLAUDE` / `CHATGPT`). Every person-only route
+  rejects Bearer tokens, even in local-dev mode. `ASSISTANT` tokens are
+  read-only (Personal Assistant, §26).
+- **AI context** (`GET /api/projects/:id/ai-context`, schema
+  `eden-planner/ai-context@1`): the rules, workstreams, people (names only, no
+  emails or ids), tasks with every planning field (unknown = null), dependency
+  states, violations, pending proposals, 14 days of changes, and the proposal
+  format.
+- **Optional drafting** (`POST /api/projects/:id/ai-draft`): with
+  `ANTHROPIC_API_KEY` (model `ANTHROPIC_MODEL`, default `claude-opus-5-5`,
+  forced tool call) or `OPENAI_API_KEY` + `OPENAI_MODEL` (JSON mode; no default
+  model is assumed), the server asks the provider for a proposal. The answer
+  goes through the same schema and review. Without keys everything else works.
+- `AI_MUTATIONS_REQUIRE_APPROVAL` stays `true`. In V0 the planner has no
+  auto-apply path at all, so `false` changes nothing (hard rule: canonical
+  writes need human approval).

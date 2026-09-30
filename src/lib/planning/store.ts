@@ -1,7 +1,8 @@
 import type { MemberDraft, ProjectDraft, WorkstreamDraft } from "@/domain/planning/entityRules";
 import type { TaskChanges, TaskDraft } from "@/domain/planning/taskRules";
 import type { TrelloSyncState } from "@/domain/planning/constants";
-import type { Member, Project, Task, TaskDependency, Workstream } from "@/domain/planning/types";
+import type { AuditEvent, ChangeProposal, Member, Project, Task, TaskDependency, Workstream } from "@/domain/planning/types";
+import type { BatchOp } from "@/domain/planning/writes";
 import type { TrelloSettings } from "@/domain/trello/mapping";
 
 /** Sync bookkeeping written by the Trello sync (never touches planning fields or `updatedAt`). */
@@ -16,18 +17,7 @@ export interface TrelloLinkUpdate {
 
 export type MemberChanges = Partial<Pick<Member, "displayName" | "email" | "trelloMemberId" | "active">>;
 
-/** One step of an atomic batch (cascade, proposal apply). IDs of new rows are chosen by the caller. */
-export type BatchOp =
-  | { kind: "createTask"; id: string; draft: TaskDraft }
-  | { kind: "updateTask"; id: string; changes: TaskChanges; expectedUpdatedAt: string }
-  | {
-      kind: "createDependency";
-      id: string;
-      projectId: string;
-      input: Pick<TaskDependency, "predecessorTaskId" | "successorTaskId" | "lagDays">;
-    }
-  | { kind: "updateDependency"; id: string; lagDays: number }
-  | { kind: "deleteDependency"; id: string };
+export type { BatchOp } from "@/domain/planning/writes";
 
 /**
  * Persistence port for planning data, implemented on SQLite
@@ -76,4 +66,11 @@ export interface PlanningStore {
   getTrelloSettings(projectId: string): Promise<TrelloSettings | null>;
   saveTrelloSettings(settings: Omit<TrelloSettings, "updatedAt">): Promise<TrelloSettings>;
   recordTrelloSync(taskId: string, link: TrelloLinkUpdate): Promise<void>;
+
+  createProposal(input: Pick<ChangeProposal, "projectId" | "source" | "reason" | "payload" | "submittedBy">): Promise<ChangeProposal>;
+  getProposal(id: string): Promise<ChangeProposal | null>;
+  listProposals(projectId: string, options?: { status?: ChangeProposal["status"]; limit?: number }): Promise<ChangeProposal[]>;
+
+  /** Audit history, newest first. */
+  listAuditEvents(filter: { projectId: string; entityId?: string; since?: string; limit?: number }): Promise<AuditEvent[]>;
 }

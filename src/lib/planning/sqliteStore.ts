@@ -5,12 +5,58 @@ import type BetterSqlite3 from "better-sqlite3";
 import type { TaskChanges, TaskDraft } from "@/domain/planning/taskRules";
 import type { TaskDependency } from "@/domain/planning/types";
 import type { SubtaskMode, TrelloSettings } from "@/domain/trello/mapping";
-import type { MemberRow, ProjectRow, TaskDependencyRow, TaskRow, TrelloSettingsRow, WorkstreamRow } from "@/lib/db/rows";
+import type { ProposalState } from "@/domain/planning/constants";
+import type { AuditEvent, ChangeProposal } from "@/domain/planning/types";
+import type {
+  AuditEventRow,
+  ChangeProposalRow,
+  MemberRow,
+  ProjectRow,
+  TaskDependencyRow,
+  TaskRow,
+  TrelloSettingsRow,
+  WorkstreamRow,
+} from "@/lib/db/rows";
 
 import type { Actor } from "./actor";
 import { fromSqliteError, PlanningError, type SqliteLikeError } from "./errors";
 import { taskChangesToColumns, toDependency, toMember, toProject, toTask, toWorkstream } from "./mappers";
 import type { BatchOp, MemberChanges, PlanningStore, TrelloLinkUpdate } from "./store";
+
+function toProposal(row: ChangeProposalRow): ChangeProposal {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    source: row.source,
+    reason: row.reason,
+    payload: JSON.parse(row.payload) as unknown,
+    status: row.status as ProposalState,
+    submittedBy: row.submitted_by,
+    reviewedBy: row.reviewed_by,
+    reviewedAt: row.reviewed_at,
+    reviewNote: row.review_note,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at ?? row.created_at,
+  };
+}
+
+const parseJson = (text: string | null) => (text === null ? null : (JSON.parse(text) as Record<string, unknown>));
+
+function toAuditEvent(row: AuditEventRow): AuditEvent {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    actorType: row.actor_type,
+    actorId: row.actor_id,
+    action: row.action as AuditEvent["action"],
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    before: parseJson(row.before_json),
+    after: parseJson(row.after_json),
+    metadata: parseJson(row.metadata_json),
+    createdAt: row.created_at,
+  };
+}
 
 function toTrelloSettings(row: TrelloSettingsRow): TrelloSettings {
   return {
@@ -226,6 +272,25 @@ export function createSqlitePlanningStore(db: Db, actor: Actor): PlanningStore {
       case "deleteDependency":
         deleteDependencySync(op.id);
         return;
+      case "reviewProposal": {
+        const before = get<ChangeProposalRow>("SELECT * FROM change_proposals WHERE id = ?", op.id);
+        if (!before || before.status !== "PENDING") {
+          throw PlanningError.conflict("This proposal was already reviewed", [
+            { code: "PROPOSAL_FINAL", message: "This proposal was already reviewed" },
+          ]);
+        }
+        const now = timestampAfter(before.updated_at ?? before.created_at);
+        update("change_proposals", op.id, {
+          status: op.status,
+          reviewed_by: op.reviewedBy,
+          reviewed_at: now,
+          review_note: op.reviewNote,
+          updated_at: now,
+        });
+        const after = get<ChangeProposalRow>("SELECT * FROM change_proposals WHERE id = ?", op.id) as ChangeProposalRow;
+        audit({ action: "UPDATE", entityType: "change_proposals", entityId: op.id, projectId: after.project_id, before: before as unknown as Row, after: after as unknown as Row });
+        return;
+      }
     }
   }
 
@@ -418,6 +483,52 @@ export function createSqlitePlanningStore(db: Db, actor: Actor): PlanningStore {
         if (changedFields(before as unknown as Row, after as unknown as Row).length === 0) return;
         audit({ action: "UPDATE", entityType: "tasks", entityId: taskId, projectId: after.project_id, before: before as unknown as Row, after: after as unknown as Row });
       }),
+
+    createProposal: (input) =>
+      write(() => {
+        const now = new Date().toISOString();
+        const row: ChangeProposalRow = {
+          id: randomUUID(),
+          project_id: input.projectId,
+          source: input.source,
+          reason: input.reason,
+          payload: JSON.stringify(input.payload),
+          status: "PENDING",
+          submitted_by: input.submittedBy,
+          reviewed_by: null,
+          reviewed_at: null,
+          review_note: null,
+          created_at: now,
+          updated_at: now,
+        };
+        insert("change_proposals", row as unknown as Row);
+        audit({ action: "CREATE", entityType: "change_proposals", entityId: row.id, projectId: row.project_id, after: row as unknown as Row });
+        return toProposal(row);
+      }),
+    getProposal: (id) =>
+      read(() => {
+        const row = get<ChangeProposalRow>("SELECT * FROM change_proposals WHERE id = ?", id);
+        return row && toProposal(row);
+      }),
+    listProposals: (projectId, options = {}) =>
+      read(() =>
+        all<ChangeProposalRow>(
+          `SELECT * FROM change_proposals WHERE project_id = @projectId AND (@status IS NULL OR status = @status)
+           ORDER BY created_at DESC, id LIMIT @limit`,
+          { projectId, status: options.status ?? null, limit: options.limit ?? 200 },
+        ).map(toProposal),
+      ),
+    listAuditEvents: (filter) =>
+      read(() =>
+        all<AuditEventRow>(
+          `SELECT * FROM audit_events
+            WHERE project_id = @projectId
+              AND (@entityId IS NULL OR entity_id = @entityId)
+              AND (@since IS NULL OR created_at >= @since)
+            ORDER BY created_at DESC, rowid DESC LIMIT @limit`,
+          { projectId: filter.projectId, entityId: filter.entityId ?? null, since: filter.since ?? null, limit: filter.limit ?? 200 },
+        ).map(toAuditEvent),
+      ),
 
     applyBatch: (ops, metadata = {}) =>
       write(() => {

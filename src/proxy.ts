@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { hostnameFromHostHeader, isLoopbackHost, resolveAuthConfig, type AuthConfig } from "@/config/auth";
 import { parseServerEnv } from "@/config/env.schema";
+import { isAgentPath } from "@/lib/auth/agents";
 import { readSession, sessionCookieName } from "@/lib/auth/session";
 
 /**
@@ -29,6 +30,11 @@ export async function proxy(request: NextRequest) {
     // Use the Host header of the request (nextUrl reflects the server's own bind address).
     const hostname = hostnameFromHostHeader(request.headers.get("host"));
     return isLoopbackHost(hostname) ? NextResponse.next() : deny(403, "Local development mode: loopback only");
+  }
+
+  // Agent API tokens are verified by the route itself (constant-time hash compare).
+  if (isApi && request.headers.get("authorization")?.startsWith("Bearer ") && isAgentPath(request.nextUrl.pathname)) {
+    return NextResponse.next();
   }
 
   const principal = await readSession(config, request.cookies.get(sessionCookieName(config))?.value);

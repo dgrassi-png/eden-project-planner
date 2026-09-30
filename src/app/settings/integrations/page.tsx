@@ -110,7 +110,15 @@ export default async function IntegrationsPage() {
                 <Badge tone="red">false: approval disabled</Badge>
               )}
             </div>
-            <p className="text-[11px] text-neutral-500">The proposal and approval workflow ships in Phase 05.</p>
+            <p className="text-[11px] text-neutral-500">
+              Agents read <code className="font-mono">/api/projects/:id/ai-context</code> and submit to{" "}
+              <code className="font-mono">/change-proposals</code> with their token (<code className="font-mono">PLANNER_AGENT_TOKENS</code>);
+              people review them in{" "}
+              <Link href="/proposals" className="text-blue-700 hover:underline">
+                Proposals
+              </Link>
+              . In V0 every proposal needs a person to apply it, whatever this flag says.
+            </p>
           </IntegrationCard>
         </div>
       </div>
