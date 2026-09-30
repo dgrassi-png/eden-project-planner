@@ -469,3 +469,24 @@ API and the Gantt.
 - `AI_MUTATIONS_REQUIRE_APPROVAL` stays `true`. In V0 the planner has no
   auto-apply path at all, so `false` changes nothing (hard rule: canonical
   writes need human approval).
+
+## D-023: E:DEN initial seed (Phase 06)
+
+- `src/domain/planning/edenSeed.ts` holds the 16 macro tasks of the Product
+  Spec (GOV-001 … ROAD-001) and one workstream per code prefix (GOV, TEC, PROD,
+  SC, CERT, MKT, CRM, EIMA, POST, ROAD). CERT-003 and EIMA-003 are milestones.
+- **Only codes and titles.** Start, duration, finish, owner, priority,
+  geography, progress, deadline and dependencies are all left unset (TBD), and
+  the status is BACKLOG, the genuine state of work that is known but not yet
+  ready. The milestones are unscheduled too: the EIMA date and the CE target are
+  validated with the team, never copied from old plans (Product Definition
+  §40–41, Phase 06).
+- Workstream names (Governance, Tecnica, Produzione, …) are labels only and
+  can be renamed. Their codes are permanent.
+- **How to run.** "Create E:DEN master plan" on the empty planner, or
+  `POST /api/projects/seed-eden`. It goes through the normal service, so it is
+  validated and audited as the person who ran it. It is idempotent: existing
+  workstreams and codes are skipped, never overwritten.
+- **Team validation.** Validating the plan with the team (owners, durations,
+  dependencies, deadlines, subtasks) is Phase 06 of the Product Definition and
+  is done in the planner itself, or as AI proposals reviewed by a person.
