@@ -1,0 +1,42 @@
+/*
+ * NC-UI Soft Mechanics Rev.01 — operational Carbon/Ice material.
+ *
+ * Brand primitives (--eden-ivory, --eden-graphite, --eden-carbon,
+ * --eden-ice...) are never reassigned per-context. Only this semantic
+ * layer is. Django operational products (this scope: [data-eden-foundation]
+ * / .eden-app-body — only stacks that load this file; the narrative/
+ * marketing React consumers import Foundation directly and never reach this
+ * rule) read a cool Carbon/Ice material instead of Foundation's default warm
+ * Ivory, via a small operational scale sitting between primitives and the
+ * existing --eden-color-* semantics:
+ *   BRAND PRIMITIVES -> FOUNDATION SEMANTICS -> OPERATIONAL SEMANTICS (here)
+ *   -> SHARED COMPONENTS -> PRODUCT COMPONENTS -> PAGE COMPOSITIONS
+ * Recalibrating Ice/Carbon later only touches --eden-op-*, never the
+ * primitives or the components built on top of the semantics.
+ */
+[data-eden-foundation],
+.eden-app-body {
+    --eden-op-canvas: var(--eden-ice);
+    --eden-op-surface: color-mix(in srgb, var(--eden-ice) 55%, white);
+    --eden-op-surface-raised: white;
+    --eden-op-surface-recessed: color-mix(in srgb, var(--eden-ice) 82%, var(--eden-carbon));
+    --eden-op-border: color-mix(in srgb, var(--eden-carbon) 14%, var(--eden-ice));
+    --eden-op-text: var(--eden-carbon);
+
+    --eden-color-canvas: var(--eden-op-canvas);
+    --eden-color-surface: var(--eden-op-surface);
+    --eden-color-surface-raised: var(--eden-op-surface-raised);
+    --eden-color-surface-recessed: var(--eden-op-surface-recessed);
+    --eden-color-border: var(--eden-op-border);
+    --eden-color-text: var(--eden-op-text);
+}
+
+:root[data-eden-theme="dark"] [data-eden-foundation],
+:root[data-eden-theme="dark"] .eden-app-body {
+    --eden-op-canvas: var(--eden-carbon);
+    --eden-op-surface: color-mix(in srgb, var(--eden-carbon) 88%, white);
+    --eden-op-surface-raised: color-mix(in srgb, var(--eden-carbon) 78%, white);
+    --eden-op-surface-recessed: color-mix(in srgb, var(--eden-carbon) 92%, black);
+    --eden-op-border: color-mix(in srgb, var(--eden-ice) 22%, var(--eden-carbon));
+    --eden-op-text: var(--eden-ice);
+}

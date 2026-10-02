@@ -1,5 +1,7 @@
 # Product Spec V0
 
+> Derived from the master product definition in `docs/PRODUCT_DEFINITION.md` (v1.0), which is the product source of truth.
+
 ## Objective
 E:DEN Project Planner is the master timeline for E:DEN. It answers what must happen, who owns it, how long it takes, what it depends on, and what slips if dates change.
 

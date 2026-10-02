@@ -1,34 +1,51 @@
 # Architecture V0
 
 ## System
-Browser -> Next.js application -> Supabase/Postgres.
+Browser -> nginx (E:DEN host) -> Next.js planner (systemd) -> planner-owned SQLite (/var/lib/eden/planner-<env>/planner.sqlite3).
+Sign-in: Browser -> auth.e-den.tech (E:DEN Identity) -> planner callback -> server-side code exchange.
 
 Server-side adapters connect to Trello and optional AI providers. Provider secrets never reach browser code.
+Ecosystem conventions and open decisions: `docs/ECOSYSTEM_ALIGNMENT.md`.
 
 ## API
 Projects:
 - GET /api/projects
 - GET /api/projects/:id
 
+Workstreams and members:
+- GET/POST /api/projects/:id/workstreams
+- PATCH/DELETE /api/workstreams/:id
+- GET/POST /api/projects/:id/members
+
 Tasks:
 - GET/POST /api/projects/:id/tasks
-- PATCH/DELETE /api/tasks/:id
+- GET/PATCH/DELETE /api/tasks/:id
 
 Dependencies:
 - POST /api/dependencies
-- DELETE /api/dependencies/:id
+- PATCH/DELETE /api/dependencies/:id
 
-Trello:
-- POST /api/tasks/:id/sync-trello
-- POST /api/projects/:id/sync-trello
-- GET /api/projects/:id/trello-sync-status
+Scheduling (Phase 03, D-020):
+- POST /api/tasks/:id/impact (preview a change; saves nothing)
+- GET/POST /api/tasks/:id/cascade (preview / apply the reviewed cascade)
+- GET /api/projects/:id/schedule (dependency checks)
 
-AI:
-- GET /api/projects/:id/ai-context
-- POST /api/projects/:id/change-proposals
-- GET /api/change-proposals/:id
-- POST /api/change-proposals/:id/apply
-- POST /api/change-proposals/:id/reject
+Trello (Phase 04, D-021):
+- GET /api/trello/board (live lists/labels/members of the configured board)
+- GET/PUT /api/projects/:id/trello-settings
+- PUT /api/members/:id/trello
+- GET /api/projects/:id/trello-sync-status (dry-run)
+- POST /api/projects/:id/sync-trello ({ items } from the dry-run)
+- POST /api/tasks/:id/sync-trello ({ dryRun: true } or { confirm })
+- DELETE /api/tasks/:id/trello-link
+
+AI (Phase 05, D-022; agents use `Authorization: Bearer <token>`):
+- GET /api/projects/:id/ai-context (people, CLAUDE, CHATGPT, ASSISTANT)
+- GET/POST /api/projects/:id/change-proposals (people, CLAUDE, CHATGPT)
+- GET /api/change-proposals/:id (review: diff + impact + fingerprint)
+- POST /api/change-proposals/:id/apply ({ fingerprint }; people only)
+- POST /api/change-proposals/:id/reject ({ note }; people only)
+- POST /api/projects/:id/ai-draft (people only; optional provider keys)
 
 ## Scheduling
 Tasks can be scheduled, partially scheduled, or unscheduled. Default calendar is Monday-Friday. Finish is derived from start + working-day duration. Milestones have zero duration.
@@ -49,3 +66,8 @@ Agents may read, summarize, explain impact and propose. Canonical writes occur t
 
 ## Audit
 Record actor type (USER, CHATGPT, CLAUDE, SYSTEM, TRELLO_SYNC), actor ID, action, entity, before/after JSON, metadata and timestamp.
+
+## Implementation notes (Phase 01)
+- `GET /api/projects` / `POST /api/projects` list and create projects. `GET /api/projects/:id` returns a full planning snapshot.
+- Responses are `{ data }` on success, and `{ error: { kind, message, issues[] } }` with 404 / 409 / 422 / 503 on failure.
+- Database access is server-only (local SQLite file owned by the planner). See `docs/DECISIONS.md` D-019.

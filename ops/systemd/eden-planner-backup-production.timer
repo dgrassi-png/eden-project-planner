@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily E:DEN Planner database backup (production)
+
+[Timer]
+OnCalendar=*-*-* 02:40:00 Europe/Rome
+RandomizedDelaySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

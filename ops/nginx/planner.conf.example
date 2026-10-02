@@ -1,0 +1,64 @@
+# E:DEN Planner — nginx boundary (example; the live file
+# /etc/nginx/conf.d/eden-platform.conf is host-managed).
+#
+# RULE: the production and preview `location /` blocks must NEVER point at the
+# same upstream port (see the 2026-09-21 website incident, manual Rev.09).
+#   production  planner.e-den.tech          -> 127.0.0.1:3300
+#   preview     planner-preview.e-den.tech  -> 127.0.0.1:3310
+# TLS termination follows the host's existing procedure (certificate owner and
+# renewal to be recorded in the runbook). Replace, never append, forwarding
+# headers coming from clients.
+
+map $http_upgrade $connection_upgrade { default upgrade; '' close; }
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name planner.e-den.tech;
+    # ssl_certificate / ssl_certificate_key: host-managed.
+
+    client_max_body_size 1m;
+
+    location / {
+        proxy_pass http://127.0.0.1:3300;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 60s;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name planner-preview.e-den.tech;
+    # ssl_certificate / ssl_certificate_key: host-managed.
+
+    client_max_body_size 1m;
+
+    location / {
+        proxy_pass http://127.0.0.1:3310;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 60s;
+    }
+}
+
+server {
+    listen 80;
+    server_name planner.e-den.tech planner-preview.e-den.tech;
+    return 301 https://$host$request_uri;
+}

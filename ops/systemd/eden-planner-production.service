@@ -1,0 +1,32 @@
+# E:DEN Planner — production runtime (planner.e-den.tech -> 127.0.0.1:3300).
+# Mirrored in the repo per manual Rev.09 ("ops as code"); install with
+# ops/deploy/install-planner-runtime.sh. Preview runs as a separate unit on
+# another port and must never share this service, port or worktree.
+[Unit]
+Description=E:DEN Planner (production)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+UMask=0027
+WorkingDirectory=/home/ubuntu/workspace/eden-planner-production
+EnvironmentFile=/etc/eden/planner-production.env
+Environment=NODE_ENV=production
+Environment=PLANNER_DATABASE_PATH=/var/lib/eden/planner-production/planner.sqlite3
+Environment=PATH=/home/ubuntu/.local/node22/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/ubuntu/.local/node22/bin/npm run start -- --hostname 127.0.0.1 --port 3300
+KillSignal=SIGTERM
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=5
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/workspace/eden-planner-production/.next /var/lib/eden/planner-production
+
+[Install]
+WantedBy=multi-user.target

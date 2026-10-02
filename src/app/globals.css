@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/*
+ * E:DEN foundation bridge.
+ *
+ * Tokens come only from the vendored shared/eden_ui foundation (see
+ * src/vendor/eden_ui/PROVENANCE.md), loaded before this file in the root
+ * layout. The planner is an operational tool, so it uses the operational
+ * Carbon/Ice material (NC-UI Soft Mechanics Rev.01) and the 2026 Blue/Cyan/Mint
+ * palette; the deprecated orange is never used.
+ *
+ * The Tailwind colour scales used by the components are mapped onto E:DEN
+ * semantic tokens here (no raw hex values), like the preorders @theme bridge.
+ */
+@theme {
+  --font-sans: var(--eden-font-sans);
+  --font-mono: var(--eden-font-mono);
+
+  /* Neutrals: Carbon/Ice. */
+  --color-neutral-50: var(--eden-color-surface);
+  --color-neutral-100: var(--eden-color-canvas);
+  --color-neutral-200: var(--eden-color-border);
+  --color-neutral-300: color-mix(in srgb, var(--eden-carbon) 26%, var(--eden-ice));
+  --color-neutral-400: color-mix(in srgb, var(--eden-carbon) 45%, var(--eden-ice));
+  --color-neutral-500: color-mix(in srgb, var(--eden-carbon) 62%, var(--eden-ice));
+  --color-neutral-600: color-mix(in srgb, var(--eden-carbon) 72%, var(--eden-ice));
+  --color-neutral-700: color-mix(in srgb, var(--eden-carbon) 82%, var(--eden-ice));
+  --color-neutral-800: color-mix(in srgb, var(--eden-carbon) 92%, var(--eden-ice));
+  --color-neutral-900: var(--eden-carbon);
+
+  /* Primary action / active work: E:DEN Blue (text uses the ink token). */
+  --color-blue-50: color-mix(in srgb, var(--eden-blue) 8%, white);
+  --color-blue-100: color-mix(in srgb, var(--eden-blue) 14%, white);
+  --color-blue-200: color-mix(in srgb, var(--eden-blue) 28%, white);
+  --color-blue-500: var(--eden-blue);
+  --color-blue-600: var(--eden-blue);
+  --color-blue-700: var(--eden-color-accent-primary-ink);
+  --color-blue-800: color-mix(in srgb, var(--eden-blue) 60%, black);
+  --color-blue-900: color-mix(in srgb, var(--eden-blue) 45%, black);
+
+  /* Ready: brand sky. */
+  --color-sky-500: var(--eden-sky);
+  --color-sky-700: color-mix(in srgb, var(--eden-sky) 45%, black);
+
+  /* Semantic states. */
+  --color-emerald-50: var(--eden-tint-positive);
+  --color-emerald-200: color-mix(in srgb, var(--eden-positive) 30%, white);
+  --color-emerald-600: var(--eden-positive);
+  --color-emerald-800: color-mix(in srgb, var(--eden-positive) 70%, black);
+  --color-amber-50: var(--eden-tint-warning);
+  --color-amber-200: color-mix(in srgb, var(--eden-warning) 30%, white);
+  --color-amber-500: var(--eden-warning);
+  --color-amber-700: color-mix(in srgb, var(--eden-warning) 75%, black);
+  --color-amber-800: color-mix(in srgb, var(--eden-warning) 70%, black);
+  --color-amber-900: color-mix(in srgb, var(--eden-warning) 55%, black);
+  --color-red-50: var(--eden-tint-danger);
+  --color-red-200: color-mix(in srgb, var(--eden-danger) 30%, white);
+  --color-red-500: var(--eden-danger);
+  --color-red-700: var(--eden-danger);
+  --color-red-800: color-mix(in srgb, var(--eden-danger) 75%, black);
+  --color-red-900: color-mix(in srgb, var(--eden-danger) 60%, black);
+
+  /* Milestones: carbon ink diamonds (no off-palette violet). */
+  --color-violet-600: var(--eden-carbon);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--eden-color-canvas);
+  color: var(--eden-color-text);
+  font-family: var(--eden-font-sans);
+}
