@@ -262,92 +262,114 @@ button.wi:hover{background:var(--accent-soft)}
 -->
 <script type="application/json" id="arch-data">
 {
-"meta":{"name":"E — 48 V architecture (from sketch)","version":"sketch-01","source":"Hand sketch: Battery module, BUS +48V, BUS −48V",
- "notes":"Transcribed from the hand sketch. Connectors, wire counts, gauges, fuse ratings, CAN and vehicle zones are not on the sketch and are left TBD."},
+"meta":{"name": "E — 48 V architecture (from sketch)", "version": "sketch-01 + QexPand V1.3", "source": "Hand sketch: Battery module, BUS +48V, BUS −48V", "notes": "48 V system from the hand sketch. Controller↔ECU wiring from QexPand 'Electrical schematic of agricultural machinery vehicles' V1.3 and CAN PROTOCOL V1.24 (2026-07-29). Unknowns stay TBD."},
 "categories":{
- "BAT":{"name":"Battery","needsPower":false,"needsGround":true},
- "FUS":{"name":"Fuse","needsPower":true,"needsGround":false},
- "PDU":{"name":"Power distribution / + bus","needsPower":true,"needsGround":false},
- "GB":{"name":"Ground bus / − bus","needsPower":false,"needsGround":true},
- "INV":{"name":"Inverter","needsPower":true,"needsGround":true},
- "PRS":{"name":"Socket outlet","needsPower":true,"needsGround":true},
- "MC":{"name":"Motor controller","needsPower":true,"needsGround":true},
- "MOT":{"name":"Motor","needsPower":true,"needsGround":false},
- "KM":{"name":"Contactor","needsPower":true,"needsGround":false},
- "SW":{"name":"Switch","needsPower":false,"needsGround":false},
- "DC":{"name":"DC/DC converter","needsPower":true,"needsGround":true},
- "DISP":{"name":"Display","needsPower":true,"needsGround":true},
- "ECU":{"name":"Electronic control unit","needsPower":true,"needsGround":true},
- "CON":{"name":"Connector / interface","needsPower":false,"needsGround":false},
- "VCU":{"name":"Vehicle control unit","needsPower":true,"needsGround":true},
- "SEN":{"name":"Sensor","needsPower":false,"needsGround":false}
+ "BAT":{"name": "Battery", "needsPower": false, "needsGround": true},
+ "FUS":{"name": "Fuse", "needsPower": true, "needsGround": false},
+ "PDU":{"name": "Power distribution / + bus", "needsPower": true, "needsGround": false},
+ "GB":{"name": "Ground bus / − bus", "needsPower": false, "needsGround": true},
+ "INV":{"name": "Inverter", "needsPower": true, "needsGround": true},
+ "PRS":{"name": "Socket outlet", "needsPower": true, "needsGround": true},
+ "MC":{"name": "Motor controller", "needsPower": true, "needsGround": true},
+ "MOT":{"name": "Motor", "needsPower": true, "needsGround": false},
+ "KM":{"name": "Contactor", "needsPower": true, "needsGround": false},
+ "SW":{"name": "Switch", "needsPower": false, "needsGround": false},
+ "DC":{"name": "DC/DC converter", "needsPower": true, "needsGround": true},
+ "DISP":{"name": "Display", "needsPower": true, "needsGround": true},
+ "ECU":{"name": "Electronic control unit", "needsPower": true, "needsGround": true},
+ "CON":{"name": "Connector / interface", "needsPower": false, "needsGround": false},
+ "VCU":{"name": "Vehicle control unit", "needsPower": true, "needsGround": true},
+ "SEN":{"name": "Sensor", "needsPower": false, "needsGround": false}
 },
-"zones":[],
+"zones":[
+],
 "components":[
- {"id":"bat01","ref":"BAT-01","name":"BATTERY MODULE","category":"BAT","zone":null,"supply":"48 V","can":false,"x":40,"y":230,"w":150,"h":110,"notes":""},
- {"id":"f1","ref":"F1","name":"Fuse F1","category":"FUS","zone":null,"supply":null,"can":false,"x":215,"y":256,"notes":"Rating not on sketch."},
- {"id":"f2","ref":"F2","name":"Fuse F2","category":"FUS","zone":null,"supply":null,"can":false,"x":215,"y":46,"notes":"Rating not on sketch."},
- {"id":"inv01","ref":"INV-01","name":"INVERTER","category":"INV","zone":null,"supply":"48 V","can":false,"x":400,"y":40,"notes":""},
- {"id":"prs01","ref":"PRS-01","name":"MULTIPRESA","category":"PRS","zone":null,"supply":null,"can":false,"x":590,"y":40,"notes":"Fed from the INVERTER output; output type not on sketch."},
- {"id":"pdu01","ref":"PDU-01","name":"BUS +48V","category":"PDU","zone":null,"supply":"48 V","can":false,"x":640,"y":130,"w":100,"h":440,"notes":""},
- {"id":"gb01","ref":"GB-01","name":"BUS −48V","category":"GB","zone":null,"supply":null,"can":false,"x":640,"y":640,"w":100,"h":160,"notes":""},
- {"id":"f3","ref":"F3","name":"Fuse F3","category":"FUS","zone":null,"supply":null,"can":false,"x":760,"y":150,"notes":"Rating not on sketch."},
- {"id":"f4","ref":"F4","name":"Fuse F4","category":"FUS","zone":null,"supply":null,"can":false,"x":760,"y":230,"notes":"Rating not on sketch."},
- {"id":"f5","ref":"F5","name":"Fuse F5","category":"FUS","zone":null,"supply":null,"can":false,"x":760,"y":390,"notes":"Rating not on sketch."},
- {"id":"f6","ref":"F6","name":"Fuse F6","category":"FUS","zone":null,"supply":null,"can":false,"x":760,"y":550,"notes":"Rating not on sketch."},
- {"id":"mcr01","ref":"MC-R01","name":"TRZ_CON_DX","category":"MC","zone":null,"supply":"48 V","can":false,"x":960,"y":144,"notes":"Traction controller, right."},
- {"id":"motr01","ref":"MOT-R01","name":"MOT_DX","category":"MOT","zone":null,"supply":null,"can":false,"x":1150,"y":144,"notes":"Traction motor, right."},
- {"id":"mcl01","ref":"MC-L01","name":"TRZ_CON_SX","category":"MC","zone":null,"supply":"48 V","can":false,"x":960,"y":224,"notes":"Traction controller, left."},
- {"id":"motl01","ref":"MOT-L01","name":"MOT_SX","category":"MOT","zone":null,"supply":null,"can":false,"x":1150,"y":224,"notes":"Traction motor, left."},
- {"id":"km01","ref":"KM-01","name":"PTO_CONTA","category":"KM","zone":null,"supply":"48 V","can":false,"x":960,"y":290,"notes":"PTO contactor, fed directly from BUS +48V (no fuse drawn). Coil control not on sketch."},
- {"id":"mcp01","ref":"MC-P01","name":"PTO_CON","category":"MC","zone":null,"supply":"48 V","can":false,"x":1150,"y":320,"notes":"PTO controller."},
- {"id":"motp01","ref":"MOT-P01","name":"MOT_PTO","category":"MOT","zone":null,"supply":null,"can":false,"x":1340,"y":320,"notes":""},
- {"id":"sw01","ref":"SW-01","name":"KEY SWITCH","category":"SW","zone":null,"supply":"48 V","can":false,"x":960,"y":384,"notes":"Fed through F5. Feeds the stop chain and the DC DC."},
- {"id":"sw02","ref":"SW-02","name":"STOP HW","category":"SW","zone":null,"supply":null,"can":false,"x":1150,"y":384,"notes":""},
- {"id":"sw03","ref":"SW-03","name":"STOP REMOTE","category":"SW","zone":null,"supply":null,"can":false,"x":1340,"y":384,"notes":""},
- {"id":"ksi01","ref":"CON-01","name":"KSI","category":"CON","zone":null,"supply":null,"can":false,"x":1530,"y":384,"notes":"Key switch input. Which controllers receive it is not shown on the sketch."},
- {"id":"dc01","ref":"DC-01","name":"DC DC","category":"DC","zone":null,"supply":"48 V in · output TBD","can":false,"x":1150,"y":464,"notes":"Input from KEY SWITCH."},
- {"id":"ecu01","ref":"ECU-01","name":"A_ECU","category":"ECU","zone":null,"supply":null,"can":false,"x":1530,"y":444,"notes":"Fed from DC DC through CON'."},
- {"id":"ecu02","ref":"ECU-02","name":"G_ECU","category":"ECU","zone":null,"supply":null,"can":false,"x":1530,"y":524,"notes":"Fed from DC DC through CON'."},
- {"id":"disp01","ref":"DISP-01","name":"DISPLAY","category":"DISP","zone":null,"supply":"48 V","can":false,"x":960,"y":544,"notes":"Fed through F6."}
+ {"id": "bat01", "ref": "BAT-01", "name": "BATTERY MODULE", "category": "BAT", "zone": null, "supply": "48 V", "can": false, "x": 40, "y": 230, "w": 150, "h": 110, "notes": ""},
+ {"id": "f1", "ref": "F1", "name": "Fuse F1", "category": "FUS", "zone": null, "supply": null, "can": false, "x": 215, "y": 256, "notes": "Rating not on sketch."},
+ {"id": "f2", "ref": "F2", "name": "Fuse F2", "category": "FUS", "zone": null, "supply": null, "can": false, "x": 215, "y": 46, "notes": "Rating not on sketch."},
+ {"id": "inv01", "ref": "INV-01", "name": "INVERTER", "category": "INV", "zone": null, "supply": "48 V", "can": false, "x": 400, "y": 40, "notes": ""},
+ {"id": "prs01", "ref": "PRS-01", "name": "MULTIPRESA", "category": "PRS", "zone": null, "supply": null, "can": false, "x": 590, "y": 40, "notes": "Fed from the INVERTER output; output type not on sketch."},
+ {"id": "pdu01", "ref": "PDU-01", "name": "BUS +48V", "category": "PDU", "zone": null, "supply": "48 V", "can": false, "x": 640, "y": 130, "w": 100, "h": 440, "notes": ""},
+ {"id": "gb01", "ref": "GB-01", "name": "BUS −48V", "category": "GB", "zone": null, "supply": null, "can": false, "x": 640, "y": 640, "w": 100, "h": 160, "notes": ""},
+ {"id": "f3", "ref": "F3", "name": "Fuse F3", "category": "FUS", "zone": null, "supply": null, "can": false, "x": 760, "y": 150, "notes": "Rating not on sketch."},
+ {"id": "f4", "ref": "F4", "name": "Fuse F4", "category": "FUS", "zone": null, "supply": null, "can": false, "x": 760, "y": 230, "notes": "Rating not on sketch."},
+ {"id": "f5", "ref": "F5", "name": "Fuse F5", "category": "FUS", "zone": null, "supply": null, "can": false, "x": 760, "y": 410, "notes": "Rating not on sketch."},
+ {"id": "f6", "ref": "F6", "name": "Fuse F6", "category": "FUS", "zone": null, "supply": null, "can": false, "x": 760, "y": 730, "notes": "Rating not on sketch."},
+ {"id": "mcr01", "ref": "MC-R01", "name": "TRZ_CON_DX", "category": "MC", "zone": null, "supply": "48 V", "can": true, "x": 960, "y": 144, "notes": "QexPand PVM48S10 (right traction). Built-in contactor. Schematic V1.3 shows a 100 A fuse on B+."},
+ {"id": "motr01", "ref": "MOT-R01", "name": "MOT_DX", "category": "MOT", "zone": null, "supply": null, "can": false, "x": 1220, "y": 144, "notes": "Right traction motor. Hall feedback to TRZ_CON_DX."},
+ {"id": "mcl01", "ref": "MC-L01", "name": "TRZ_CON_SX", "category": "MC", "zone": null, "supply": "48 V", "can": true, "x": 960, "y": 224, "notes": "QexPand PVM48S10 (left traction). Built-in contactor. Schematic V1.3 shows a 100 A fuse on B+."},
+ {"id": "motl01", "ref": "MOT-L01", "name": "MOT_SX", "category": "MOT", "zone": null, "supply": null, "can": false, "x": 1220, "y": 224, "notes": "Left traction motor. Hall feedback to TRZ_CON_SX."},
+ {"id": "km01", "ref": "KM-01", "name": "PTO_CONTA", "category": "KM", "zone": null, "supply": "48 V", "can": false, "x": 760, "y": 296, "notes": "PTO contactor, 400 A per QexPand schematic V1.3. Coil driven by PTO_CON C-6 (DRIVER1) / C-13 (COIL RETURN).", "w": 70, "h": 40},
+ {"id": "mcp01", "ref": "MC-P01", "name": "PTO_CON", "category": "MC", "zone": null, "supply": "48 V", "can": true, "x": 960, "y": 304, "notes": "QexPand LPM48S45GA1-B2 (PTO). Drives the PTO contactor coil (DRIVER1). Schematic V1.3 shows a 400 A fuse on B+. CAN termination: jumper C-21 ↔ C-34 if needed."},
+ {"id": "motp01", "ref": "MOT-P01", "name": "MOT_PTO", "category": "MOT", "zone": null, "supply": null, "can": false, "x": 1220, "y": 304, "notes": "PTO motor (PMSM). Resolver + motor temperature sensor to PTO_CON."},
+ {"id": "sw01", "ref": "SW-01", "name": "KEY SWITCH", "category": "SW", "zone": null, "supply": "48 V", "can": false, "x": 960, "y": 400, "notes": "Fed through F5. Feeds the stop chain and the DC DC."},
+ {"id": "sw02", "ref": "SW-02", "name": "STOP HW", "category": "SW", "zone": null, "supply": null, "can": false, "x": 1220, "y": 400, "notes": ""},
+ {"id": "sw03", "ref": "SW-03", "name": "STOP REMOTE", "category": "SW", "zone": null, "supply": null, "can": false, "x": 1220, "y": 480, "notes": ""},
+ {"id": "ksi01", "ref": "CON-01", "name": "KSI", "category": "CON", "zone": null, "supply": null, "can": false, "x": 1220, "y": 640, "notes": "KSI line: E-STOP → KSI switch → 20 A fuse → controllers' KSI pins and diagnostic port pin 2 (QexPand 'Electrical schematic of agricultural machinery vehicles' V1.3)."},
+ {"id": "dc01", "ref": "DC-01", "name": "DC DC", "category": "DC", "zone": null, "supply": "48 V in · output TBD", "can": false, "x": 960, "y": 480, "notes": "Input from KEY SWITCH."},
+ {"id": "ecu01", "ref": "ECU-01", "name": "A_ECU", "category": "ECU", "zone": null, "supply": null, "can": false, "x": 960, "y": 640, "notes": "Anostra ECU. No datasheet available yet: only the supply from DC DC (sketch) is modelled."},
+ {"id": "ecu02", "ref": "ECU-02", "name": "Q_ECU", "category": "ECU", "zone": null, "supply": "9–36 V (from DC DC)", "can": true, "x": 960, "y": 560, "notes": "QexPand ECU-B-001. 9–36 V supply only: battery power is strictly prohibited (datasheet note). CAN master: commands the three controllers (CAN PROTOCOL V1.24 (2026-07-29), 250 kbit/s)."},
+ {"id": "disp01", "ref": "DISP-01", "name": "DISPLAY", "category": "DISP", "zone": null, "supply": "48 V", "can": false, "x": 960, "y": 720, "notes": "Fed through F6."},
+ {"id": "diag01", "ref": "CON-02", "name": "CAN / diagnostic port", "category": "CON", "zone": null, "supply": null, "can": true, "x": 1410, "y": 560, "notes": "Service connector from QexPand 'Electrical schematic of agricultural machinery vehicles' V1.3: 8-way (pin 2 KSI, pin 5 GND, pin 8 +48V) + 4-way (pin 1 CAN-H, pin 2 CAN-L). Used with the QexPand CHP8062 CAN debugger. +48V/GND pins not yet modelled."}
 ],
 "connectors":[
- {"id":"X01","label":"X01","component":null,"x":470,"y":270,"family":null,"pins":null,"class":"48 V +","notes":"USCITA POT 48V (+) on the sketch."},
- {"id":"X02","label":"X02","component":null,"x":470,"y":720,"family":null,"pins":null,"class":"48 V −","notes":"USCITA POT 48V (−) on the sketch."},
- {"id":"X03","label":"CON'","component":null,"x":1430,"y":484,"family":null,"pins":null,"class":null,"notes":"CON' on the sketch: splits the DC DC output to A_ECU and G_ECU."}
+ {"id": "X01", "label": "X01", "component": null, "x": 470, "y": 270, "family": null, "pins": null, "class": "48 V +", "notes": "USCITA POT 48V (+) on the sketch."},
+ {"id": "X02", "label": "X02", "component": null, "x": 470, "y": 720, "family": null, "pins": null, "class": "48 V −", "notes": "USCITA POT 48V (−) on the sketch."},
+ {"id": "X03", "label": "CON'", "component": null, "x": 1160, "y": 600, "family": null, "pins": null, "class": null, "notes": "CON' on the sketch: splits the DC DC output to A_ECU and G_ECU."},
+ {"id": "mcr01.B", "label": "B", "component": "mcr01", "family": null, "pins": null, "class": "Signal + CAN", "notes": "PVM48S10 signal connector (pins B-n)."},
+ {"id": "mcl01.A", "label": "A", "component": "mcl01", "family": null, "pins": null, "class": "Signal + CAN", "notes": "PVM48S10 signal connector (pins A-n)."},
+ {"id": "mcp01.C", "label": "C", "component": "mcp01", "family": null, "pins": null, "class": "Signal + CAN", "notes": "LPM48S45GA1-B2 signal connector (pins C-n)."},
+ {"id": "ecu02.1", "label": "1", "component": "ecu02", "family": null, "pins": null, "class": "Signal + supply", "notes": "ECU-B-001 connector 1 (pins 1-n)."},
+ {"id": "ecu02.2", "label": "2", "component": "ecu02", "family": null, "pins": null, "class": "CAN", "notes": "ECU-B-001 connector 2 (pins 2-n)."},
+ {"id": "diag01.J1", "label": "J1", "component": "diag01", "family": null, "pins": 8, "class": "KSI / +48V / GND", "notes": "8-way: 2 KSI, 5 GND, 8 +48V."},
+ {"id": "diag01.J2", "label": "J2", "component": "diag01", "family": null, "pins": 4, "class": "CAN", "notes": "4-way: 1 CAN-H, 2 CAN-L."}
 ],
 "connections":[
- {"id":"W001","from":"bat01","fromConn":null,"to":"f2","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W002","from":"f2","fromConn":null,"to":"inv01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W003","from":"inv01","fromConn":null,"to":"prs01","toConn":null,"layer":"power","duty":"high","signal":"Inverter output","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W004","from":"bat01","fromConn":null,"to":"f1","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W005","from":"f1","fromConn":null,"to":"pdu01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":["X01"],"notes":""},
- {"id":"W006","from":"pdu01","fromConn":null,"to":"f3","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W007","from":"f3","fromConn":null,"to":"mcr01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W008","from":"mcr01","fromConn":null,"to":"motr01","toConn":null,"layer":"power","duty":"high","signal":"Motor","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W009","from":"pdu01","fromConn":null,"to":"f4","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W010","from":"f4","fromConn":null,"to":"mcl01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W011","from":"mcl01","fromConn":null,"to":"motl01","toConn":null,"layer":"power","duty":"high","signal":"Motor","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W012","from":"pdu01","fromConn":null,"to":"km01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W013","from":"km01","fromConn":null,"to":"mcp01","toConn":null,"layer":"power","duty":"high","signal":"+48V switched","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W014","from":"mcp01","fromConn":null,"to":"motp01","toConn":null,"layer":"power","duty":"high","signal":"Motor","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W015","from":"pdu01","fromConn":null,"to":"f5","toConn":null,"layer":"power","duty":"low","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W016","from":"f5","fromConn":null,"to":"sw01","toConn":null,"layer":"power","duty":"low","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W017","from":"sw01","fromConn":null,"to":"dc01","toConn":null,"layer":"power","duty":"low","signal":"+48V key","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W018","from":"dc01","fromConn":null,"to":"ecu01","toConn":null,"layer":"power","duty":"low","signal":"DC DC out","kind":null,"wires":null,"gauge":null,"harness":null,"via":["X03"],"notes":""},
- {"id":"W019","from":"dc01","fromConn":null,"to":"ecu02","toConn":null,"layer":"power","duty":"low","signal":"DC DC out","kind":null,"wires":null,"gauge":null,"harness":null,"via":["X03"],"notes":""},
- {"id":"W020","from":"pdu01","fromConn":null,"to":"f6","toConn":null,"layer":"power","duty":"low","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W021","from":"f6","fromConn":null,"to":"disp01","toConn":null,"layer":"power","duty":"low","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W030","from":"sw01","fromConn":null,"to":"sw02","toConn":null,"layer":"signal","duty":"low","signal":"KSI chain","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W031","from":"sw02","fromConn":null,"to":"sw03","toConn":null,"layer":"signal","duty":"low","signal":"KSI chain","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W032","from":"sw03","fromConn":null,"to":"ksi01","toConn":null,"layer":"signal","duty":"low","signal":"KSI","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W040","from":"bat01","fromConn":null,"to":"inv01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W041","from":"bat01","fromConn":null,"to":"gb01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":["X02"],"notes":""},
- {"id":"W042","from":"gb01","fromConn":null,"to":"mcr01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W043","from":"gb01","fromConn":null,"to":"mcl01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W044","from":"gb01","fromConn":null,"to":"mcp01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W045","from":"gb01","fromConn":null,"to":"dc01","toConn":null,"layer":"ground","duty":"low","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W046","from":"gb01","fromConn":null,"to":"disp01","toConn":null,"layer":"ground","duty":"low","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""}
+ {"id": "W001", "from": "bat01", "fromConn": null, "to": "f2", "toConn": null, "layer": "power", "duty": "high", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W002", "from": "f2", "fromConn": null, "to": "inv01", "toConn": null, "layer": "power", "duty": "high", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W003", "from": "inv01", "fromConn": null, "to": "prs01", "toConn": null, "layer": "power", "duty": "high", "signal": "Inverter output", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W004", "from": "bat01", "fromConn": null, "to": "f1", "toConn": null, "layer": "power", "duty": "high", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W005", "from": "f1", "fromConn": null, "to": "pdu01", "toConn": null, "layer": "power", "duty": "high", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": ["X01"], "notes": ""},
+ {"id": "W006", "from": "pdu01", "fromConn": null, "to": "f3", "toConn": null, "layer": "power", "duty": "high", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W007", "from": "f3", "fromConn": null, "to": "mcr01", "toConn": null, "layer": "power", "duty": "high", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W008", "from": "mcr01", "fromConn": null, "to": "motr01", "toConn": null, "layer": "power", "duty": "high", "signal": "Motor", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W009", "from": "pdu01", "fromConn": null, "to": "f4", "toConn": null, "layer": "power", "duty": "high", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W010", "from": "f4", "fromConn": null, "to": "mcl01", "toConn": null, "layer": "power", "duty": "high", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W011", "from": "mcl01", "fromConn": null, "to": "motl01", "toConn": null, "layer": "power", "duty": "high", "signal": "Motor", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W012", "from": "pdu01", "fromConn": null, "to": "km01", "toConn": null, "layer": "power", "duty": "high", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W013", "from": "km01", "fromConn": null, "to": "mcp01", "toConn": null, "layer": "power", "duty": "high", "signal": "+48V switched", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W014", "from": "mcp01", "fromConn": null, "to": "motp01", "toConn": null, "layer": "power", "duty": "high", "signal": "Motor", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W015", "from": "pdu01", "fromConn": null, "to": "f5", "toConn": null, "layer": "power", "duty": "low", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W016", "from": "f5", "fromConn": null, "to": "sw01", "toConn": null, "layer": "power", "duty": "low", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W017", "from": "sw01", "fromConn": null, "to": "dc01", "toConn": null, "layer": "power", "duty": "low", "signal": "+48V key", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W018", "from": "dc01", "fromConn": null, "to": "ecu01", "toConn": null, "layer": "power", "duty": "low", "signal": "DC DC out", "kind": null, "wires": null, "gauge": null, "harness": null, "via": ["X03"], "notes": ""},
+ {"id": "W019", "from": "dc01", "fromConn": null, "to": "ecu02", "toConn": "ecu02.1", "layer": "power", "duty": "low", "signal": "DC DC out", "kind": null, "wires": null, "gauge": null, "harness": null, "via": ["X03"], "notes": "Q_ECU KSI 1-4 is tied to the 9–36 V supply + (schematic V1.3)."},
+ {"id": "W020", "from": "pdu01", "fromConn": null, "to": "f6", "toConn": null, "layer": "power", "duty": "low", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W021", "from": "f6", "fromConn": null, "to": "disp01", "toConn": null, "layer": "power", "duty": "low", "signal": "+48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W030", "from": "sw01", "fromConn": null, "to": "sw02", "toConn": null, "layer": "signal", "duty": "low", "signal": "KSI chain", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W031", "from": "sw02", "fromConn": null, "to": "sw03", "toConn": null, "layer": "signal", "duty": "low", "signal": "KSI chain", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W032", "from": "sw03", "fromConn": null, "to": "ksi01", "toConn": null, "layer": "signal", "duty": "low", "signal": "KSI", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W040", "from": "bat01", "fromConn": null, "to": "inv01", "toConn": null, "layer": "ground", "duty": "high", "signal": "−48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W041", "from": "bat01", "fromConn": null, "to": "gb01", "toConn": null, "layer": "ground", "duty": "high", "signal": "−48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": ["X02"], "notes": ""},
+ {"id": "W042", "from": "gb01", "fromConn": null, "to": "mcr01", "toConn": null, "layer": "ground", "duty": "high", "signal": "−48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W043", "from": "gb01", "fromConn": null, "to": "mcl01", "toConn": null, "layer": "ground", "duty": "high", "signal": "−48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W044", "from": "gb01", "fromConn": null, "to": "mcp01", "toConn": null, "layer": "ground", "duty": "high", "signal": "−48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W045", "from": "gb01", "fromConn": null, "to": "dc01", "toConn": null, "layer": "ground", "duty": "low", "signal": "−48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W046", "from": "gb01", "fromConn": null, "to": "disp01", "toConn": null, "layer": "ground", "duty": "low", "signal": "−48V", "kind": null, "wires": null, "gauge": null, "harness": null, "via": [], "notes": ""},
+ {"id": "W050", "from": "ecu02", "fromConn": "ecu02.2", "to": "mcr01", "toConn": "mcr01.B", "layer": "can", "duty": "low", "signal": "CAN-H / CAN-L", "kind": "CAN 250k", "wires": 2, "gauge": null, "harness": null, "via": [], "notes": "Q_ECU 2-4/2-5 → B-1/B-12. Commands RPDO2 0x322 (20 ms): interlock, fwd/back, speed 0–6000 rpm, DC pump enable/throttle. Feedback TPDO 0x1A2 / 0x2A2 / 0x3A2 (50 ms)."},
+ {"id": "W051", "from": "ecu02", "fromConn": "ecu02.2", "to": "mcl01", "toConn": "mcl01.A", "layer": "can", "duty": "low", "signal": "CAN-H / CAN-L", "kind": "CAN 250k", "wires": 2, "gauge": null, "harness": null, "via": [], "notes": "Q_ECU 2-4/2-5 → A-1/A-12. Commands RPDO2 0x323 (20 ms). Feedback TPDO 0x1A3 / 0x2A3 / 0x3A3 (50 ms)."},
+ {"id": "W052", "from": "ecu02", "fromConn": "ecu02.2", "to": "mcp01", "toConn": "mcp01.C", "layer": "can", "duty": "low", "signal": "CAN-H / CAN-L", "kind": "CAN 250k", "wires": 2, "gauge": null, "harness": null, "via": [], "notes": "Q_ECU 2-4/2-5 → C-23/C-35. Commands RPDO3 0x324 (20 ms). Feedback TPDO 0x1A4 / 0x2A4 / 0x3A4 (50 ms). Termination jumper C-21/C-34."},
+ {"id": "W053", "from": "ecu02", "fromConn": "ecu02.2", "to": "diag01", "toConn": "diag01.J2", "layer": "can", "duty": "low", "signal": "CAN-H / CAN-L", "kind": "CAN 250k", "wires": 2, "gauge": null, "harness": null, "via": [], "notes": "Bus continues to the diagnostic port pins 1/2."},
+ {"id": "W054", "from": "ksi01", "fromConn": null, "to": "mcr01", "toConn": "mcr01.B", "layer": "signal", "duty": "low", "signal": "KSI", "kind": "DI 48 V", "wires": 1, "gauge": null, "harness": null, "via": [], "notes": "→ B-6."},
+ {"id": "W055", "from": "ksi01", "fromConn": null, "to": "mcl01", "toConn": "mcl01.A", "layer": "signal", "duty": "low", "signal": "KSI", "kind": "DI 48 V", "wires": 1, "gauge": null, "harness": null, "via": [], "notes": "→ A-6."},
+ {"id": "W056", "from": "ksi01", "fromConn": null, "to": "mcp01", "toConn": "mcp01.C", "layer": "signal", "duty": "low", "signal": "KSI", "kind": "DI 48 V", "wires": 1, "gauge": null, "harness": null, "via": [], "notes": "→ C-1."},
+ {"id": "W057", "from": "ksi01", "fromConn": null, "to": "diag01", "toConn": "diag01.J1", "layer": "signal", "duty": "low", "signal": "KSI", "kind": "DI 48 V", "wires": 1, "gauge": null, "harness": null, "via": [], "notes": "→ diagnostic port pin 2."},
+ {"id": "W058", "from": "mcp01", "fromConn": "mcp01.C", "to": "km01", "toConn": null, "layer": "signal", "duty": "low", "signal": "PTO contactor coil", "kind": "DO", "wires": 2, "gauge": null, "harness": null, "via": [], "notes": "C-6 DRIVER1 → coil → C-13 COIL RETURN."},
+ {"id": "W059", "from": "motr01", "fromConn": null, "to": "mcr01", "toConn": "mcr01.B", "layer": "signal", "duty": "low", "signal": "Hall +5V / U / V / W / GND", "kind": "Hall", "wires": 5, "gauge": null, "harness": null, "via": [], "notes": "B-10 +5V, B-9 HALL-U, B-22 HALL-V, B-21 HALL-W, B-20 I/O GND."},
+ {"id": "W060", "from": "motl01", "fromConn": null, "to": "mcl01", "toConn": "mcl01.A", "layer": "signal", "duty": "low", "signal": "Hall +5V / U / V / W / GND", "kind": "Hall", "wires": 5, "gauge": null, "harness": null, "via": [], "notes": "A-10 +5V, A-9 HALL-U, A-22 HALL-V, A-21 HALL-W, A-20 I/O GND."},
+ {"id": "W061", "from": "motp01", "fromConn": null, "to": "mcp01", "toConn": "mcp01.C", "layer": "signal", "duty": "low", "signal": "Resolver EXC± / COS± / SIN±", "kind": "Resolver", "wires": 6, "gauge": null, "harness": null, "via": [], "notes": "C-20 EXC-P, C-19 EXC-N, C-30 COS-P, C-29 COS-N, C-28 SIN-P, C-27 SIN-N."},
+ {"id": "W062", "from": "motp01", "fromConn": null, "to": "mcp01", "toConn": "mcp01.C", "layer": "signal", "duty": "low", "signal": "Motor temperature", "kind": "AI", "wires": 2, "gauge": null, "harness": null, "via": [], "notes": "C-8 TEMP, C-7 I/O GND."},
+ {"id": "W063", "from": "ecu02", "fromConn": "ecu02.1", "to": "dc01", "toConn": null, "layer": "ground", "duty": "low", "signal": "0 V (9–36 V supply)", "kind": "Return", "wires": 1, "gauge": null, "harness": null, "via": [], "notes": "Q_ECU 1-15 I/O GND = negative of the 9–36 V supply."}
 ],
 "harnesses":[
 ]
@@ -397,7 +419,7 @@ button.wi:hover{background:var(--accent-soft)}
 <script>
 (() => {
 'use strict';
-const STORE_KEY = 'eden-eae-dataset-v3';
+const STORE_KEY = 'eden-eae-dataset-v4';
 const LAYER_META = {
   power:  {name:'Power',   short:'PWR'},
   ground: {name:'Ground',  short:'GND'},
@@ -628,6 +650,11 @@ function sideFor(c, p){
   if (Math.abs(dx) > R.w/2 + 10) return dx > 0 ? 'r' : 'l';   // prefer horizontal exits when the target is clear to one side
   return dy > 0 ? 'b' : 't';
 }
+function blockedV(A, B){
+  const a = rectOf(A), b = rectOf(B), x = (a.cx + b.cx)/2;
+  const y0 = Math.min(a.y + a.h, b.y + b.h), y1 = Math.max(a.y, b.y);
+  return S.data.components.some(c => { if (c === A || c === B) return false; const r = rectOf(c); return r.x < x && x < r.x + r.w && r.y < y1 && r.y + r.h > y0; });
+}
 function xPos(id){ const k = ix.connector.get(id); return (k && !k.component && k.x != null) ? {x:k.x, y:k.y} : null; }
 function geometry(wires){
   const groups = new Map(), recs = [];
@@ -638,6 +665,8 @@ function geometry(wires){
     const tA = vias.length ? vias[0] : {x:cB.cx, y:cB.cy};
     const tB = vias.length ? vias[vias.length - 1] : {x:cA.cx, y:cA.cy};
     const r = {w, A, B, vias, sA:sideFor(A, tA), sB:sideFor(B, tB)};
+    // units stacked in one column with another unit in between: leave and enter on the right instead of crossing it
+    if (!vias.length && 'tb'.includes(r.sA) && 'tb'.includes(r.sB) && blockedV(A, B)) r.sA = r.sB = 'r';
     recs.push(r);
     push(groups, w.from + '|' + r.sA, {r, end:'A', key:(r.sA === 'l' || r.sA === 'r') ? tA.y : tA.x});
     push(groups, w.to + '|' + r.sB, {r, end:'B', key:(r.sB === 'l' || r.sB === 'r') ? tB.y : tB.x});
@@ -722,7 +751,7 @@ function renderCanvas(){
     const tip = `${w.id} · ${LAYER_META[w.layer]?.name || w.layer} · ${w.signal || ''}\n${refOf(w.from)} → ${refOf(w.to)} · ${w.harness || 'no harness'}`;
     body += `<path class="hit" data-conn="${esc(w.id)}" d="${r.d}"><title>${esc(tip)}</title></path>`;
     s += `<g class="edge ${st === 'd' ? 'dim' : st}">${body}</g>`;
-    const showLab = st !== 'd' && (st === 'hl' || st === 'sel' || (S.labels && S.k >= 0.6 && r.len >= 110));
+    const showLab = st !== 'd' && (st === 'hl' || st === 'sel' || (S.labels && S.k >= 0.6 && r.len >= 150));
     if (showLab && r.lab){
       let t = S.detail === 'detailed' && w.harness ? `${w.harness} · ${w.signal || ''}` : (w.signal || LAYER_META[w.layer].short);
       if (t.length > 26) t = t.slice(0, 25) + '…';

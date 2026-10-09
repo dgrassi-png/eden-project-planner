@@ -6,7 +6,12 @@ It is separate from the Planner app and has no build step.
 
 The dataset is transcribed from the hand sketch of the 48 V system (BATTERY MODULE,
 BUS +48V, BUS −48V). Only what the sketch shows is modelled. Connectors, wire counts,
-gauges, fuse ratings, CAN and vehicle zones are not on the sketch and are left `null` (TBD).
+gauges, fuse ratings and vehicle zones are not on the sketch and are left `null` (TBD).
+
+Controller ↔ ECU wiring (CAN 250 kbit/s, KSI, PTO contactor coil, Hall/resolver feedback,
+ECU supply) comes from the QexPand documents in Drive: *Electrical schematic of agricultural
+machinery vehicles* V1.3 and *CAN PROTOCOL V1.24*. TRZ_CON_DX/SX = QexPand PVM48S10,
+PTO_CON = QexPand LPM48S45GA1-B2, Q_ECU = QexPand ECU-B-001, A_ECU = Anostra (no datasheet yet).
 Harnesses are not defined yet; they will be added later.
 
 ## Replacing the dataset
