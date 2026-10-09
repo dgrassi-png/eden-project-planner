@@ -11,7 +11,11 @@ gauges, fuse ratings and vehicle zones are not on the sketch and are left `null`
 Controller ↔ ECU wiring (CAN 250 kbit/s, KSI, PTO contactor coil, Hall/resolver feedback,
 ECU supply) comes from the QexPand documents in Drive: *Electrical schematic of agricultural
 machinery vehicles* V1.3 and *CAN PROTOCOL V1.24*. TRZ_CON_DX/SX = QexPand PVM48S10,
-PTO_CON = QexPand LPM48S45GA1-B2, Q_ECU = QexPand ECU-B-001, A_ECU = Anostra (no datasheet yet).
+PTO_CON = QexPand LPM48S45GA1-B2, Q_ECU = QexPand ECU-B-001, A_ECU = Anostra (power and ground from
+DC DC, node on the same CAN network; pinout pending).
+
+The dataset describes the **target (future) architecture**, not the current bench setup.
+Operator command inputs are not modelled yet (pending input).
 Harnesses are not defined yet; they will be added later.
 
 ## Replacing the dataset

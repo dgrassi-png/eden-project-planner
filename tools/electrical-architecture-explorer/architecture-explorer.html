@@ -262,7 +262,7 @@ button.wi:hover{background:var(--accent-soft)}
 -->
 <script type="application/json" id="arch-data">
 {
-"meta":{"name": "E — 48 V architecture (from sketch)", "version": "sketch-01 + QexPand V1.3", "source": "Hand sketch: Battery module, BUS +48V, BUS −48V", "notes": "48 V system from the hand sketch. Controller↔ECU wiring from QexPand 'Electrical schematic of agricultural machinery vehicles' V1.3 and CAN PROTOCOL V1.24 (2026-07-29). Unknowns stay TBD."},
+"meta":{"name": "E — 48 V target architecture", "version": "sketch-01 + QexPand V1.3", "source": "Hand sketch: Battery module, BUS +48V, BUS −48V", "notes": "Target (future) architecture, not the current bench setup. Power from the hand sketch; controller/ECU wiring from QexPand schematic V1.3 and CAN PROTOCOL V1.24. Operator command inputs (switches, joysticks, selectors) are pending and intentionally not modelled yet."},
 "categories":{
  "BAT":{"name": "Battery", "needsPower": false, "needsGround": true},
  "FUS":{"name": "Fuse", "needsPower": true, "needsGround": false},
@@ -307,7 +307,7 @@ button.wi:hover{background:var(--accent-soft)}
  {"id": "sw03", "ref": "SW-03", "name": "STOP REMOTE", "category": "SW", "zone": null, "supply": null, "can": false, "x": 1220, "y": 480, "notes": ""},
  {"id": "ksi01", "ref": "CON-01", "name": "KSI", "category": "CON", "zone": null, "supply": null, "can": false, "x": 1220, "y": 640, "notes": "KSI line: E-STOP → KSI switch → 20 A fuse → controllers' KSI pins and diagnostic port pin 2 (QexPand 'Electrical schematic of agricultural machinery vehicles' V1.3)."},
  {"id": "dc01", "ref": "DC-01", "name": "DC DC", "category": "DC", "zone": null, "supply": "48 V in · output TBD", "can": false, "x": 960, "y": 480, "notes": "Input from KEY SWITCH."},
- {"id": "ecu01", "ref": "ECU-01", "name": "A_ECU", "category": "ECU", "zone": null, "supply": null, "can": false, "x": 960, "y": 640, "notes": "Anostra ECU. No datasheet available yet: only the supply from DC DC (sketch) is modelled."},
+ {"id": "ecu01", "ref": "ECU-01", "name": "A_ECU", "category": "ECU", "zone": null, "supply": "From DC DC", "can": true, "x": 960, "y": 640, "notes": "Anostra ECU. Power and ground from DC DC; node on the vehicle CAN network (250 kbit/s). Connector pinout and CAN messages pending (no datasheet yet)."},
  {"id": "ecu02", "ref": "ECU-02", "name": "Q_ECU", "category": "ECU", "zone": null, "supply": "9–36 V (from DC DC)", "can": true, "x": 960, "y": 560, "notes": "QexPand ECU-B-001. 9–36 V supply only: battery power is strictly prohibited (datasheet note). CAN master: commands the three controllers (CAN PROTOCOL V1.24 (2026-07-29), 250 kbit/s)."},
  {"id": "disp01", "ref": "DISP-01", "name": "DISPLAY", "category": "DISP", "zone": null, "supply": "48 V", "can": false, "x": 960, "y": 720, "notes": "Fed through F6."},
  {"id": "diag01", "ref": "CON-02", "name": "CAN / diagnostic port", "category": "CON", "zone": null, "supply": null, "can": true, "x": 1410, "y": 560, "notes": "Service connector from QexPand 'Electrical schematic of agricultural machinery vehicles' V1.3: 8-way (pin 2 KSI, pin 5 GND, pin 8 +48V) + 4-way (pin 1 CAN-H, pin 2 CAN-L). Used with the QexPand CHP8062 CAN debugger. +48V/GND pins not yet modelled."}
@@ -369,7 +369,9 @@ button.wi:hover{background:var(--accent-soft)}
  {"id": "W060", "from": "motl01", "fromConn": null, "to": "mcl01", "toConn": "mcl01.A", "layer": "signal", "duty": "low", "signal": "Hall +5V / U / V / W / GND", "kind": "Hall", "wires": 5, "gauge": null, "harness": null, "via": [], "notes": "A-10 +5V, A-9 HALL-U, A-22 HALL-V, A-21 HALL-W, A-20 I/O GND."},
  {"id": "W061", "from": "motp01", "fromConn": null, "to": "mcp01", "toConn": "mcp01.C", "layer": "signal", "duty": "low", "signal": "Resolver EXC± / COS± / SIN±", "kind": "Resolver", "wires": 6, "gauge": null, "harness": null, "via": [], "notes": "C-20 EXC-P, C-19 EXC-N, C-30 COS-P, C-29 COS-N, C-28 SIN-P, C-27 SIN-N."},
  {"id": "W062", "from": "motp01", "fromConn": null, "to": "mcp01", "toConn": "mcp01.C", "layer": "signal", "duty": "low", "signal": "Motor temperature", "kind": "AI", "wires": 2, "gauge": null, "harness": null, "via": [], "notes": "C-8 TEMP, C-7 I/O GND."},
- {"id": "W063", "from": "ecu02", "fromConn": "ecu02.1", "to": "dc01", "toConn": null, "layer": "ground", "duty": "low", "signal": "0 V (9–36 V supply)", "kind": "Return", "wires": 1, "gauge": null, "harness": null, "via": [], "notes": "Q_ECU 1-15 I/O GND = negative of the 9–36 V supply."}
+ {"id": "W063", "from": "ecu02", "fromConn": "ecu02.1", "to": "dc01", "toConn": null, "layer": "ground", "duty": "low", "signal": "0 V (9–36 V supply)", "kind": "Return", "wires": 1, "gauge": null, "harness": null, "via": [], "notes": "Q_ECU 1-15 I/O GND = negative of the 9–36 V supply."},
+ {"id": "W064", "from": "ecu01", "fromConn": null, "to": "dc01", "toConn": null, "layer": "ground", "duty": "low", "signal": "0 V (DC DC)", "kind": "Return", "wires": null, "gauge": null, "harness": null, "via": [], "notes": "A_ECU ground from DC DC."},
+ {"id": "W065", "from": "ecu02", "fromConn": "ecu02.2", "to": "ecu01", "toConn": null, "layer": "can", "duty": "low", "signal": "CAN-H / CAN-L", "kind": "CAN 250k", "wires": 2, "gauge": null, "harness": null, "via": [], "notes": "A_ECU joins the same CAN network as Q_ECU and the QexPand controllers. Messages/IDs pending."}
 ],
 "harnesses":[
 ]
@@ -419,7 +421,7 @@ button.wi:hover{background:var(--accent-soft)}
 <script>
 (() => {
 'use strict';
-const STORE_KEY = 'eden-eae-dataset-v4';
+const STORE_KEY = 'eden-eae-dataset-v5';
 const LAYER_META = {
   power:  {name:'Power',   short:'PWR'},
   ground: {name:'Ground',  short:'GND'},
