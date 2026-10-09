@@ -321,15 +321,15 @@ button.wi:hover{background:var(--accent-soft)}
  {"id":"W002","from":"f2","fromConn":null,"to":"inv01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W003","from":"inv01","fromConn":null,"to":"prs01","toConn":null,"layer":"power","duty":"high","signal":"Inverter output","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W004","from":"bat01","fromConn":null,"to":"f1","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W005","from":"f1","fromConn":null,"to":"pdu01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":"H-001","via":["X01"],"notes":""},
- {"id":"W006","from":"pdu01","fromConn":null,"to":"f3","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":"H-002","via":[],"notes":""},
- {"id":"W007","from":"f3","fromConn":null,"to":"mcr01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":"H-002","via":[],"notes":""},
+ {"id":"W005","from":"f1","fromConn":null,"to":"pdu01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":["X01"],"notes":""},
+ {"id":"W006","from":"pdu01","fromConn":null,"to":"f3","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
+ {"id":"W007","from":"f3","fromConn":null,"to":"mcr01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W008","from":"mcr01","fromConn":null,"to":"motr01","toConn":null,"layer":"power","duty":"high","signal":"Motor","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W009","from":"pdu01","fromConn":null,"to":"f4","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":"H-003","via":[],"notes":""},
- {"id":"W010","from":"f4","fromConn":null,"to":"mcl01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":"H-003","via":[],"notes":""},
+ {"id":"W009","from":"pdu01","fromConn":null,"to":"f4","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
+ {"id":"W010","from":"f4","fromConn":null,"to":"mcl01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W011","from":"mcl01","fromConn":null,"to":"motl01","toConn":null,"layer":"power","duty":"high","signal":"Motor","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W012","from":"pdu01","fromConn":null,"to":"km01","toConn":null,"layer":"power","duty":"high","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W013","from":"km01","fromConn":null,"to":"mcp01","toConn":null,"layer":"power","duty":"high","signal":"+48V switched","kind":null,"wires":null,"gauge":null,"harness":"H-004","via":[],"notes":""},
+ {"id":"W013","from":"km01","fromConn":null,"to":"mcp01","toConn":null,"layer":"power","duty":"high","signal":"+48V switched","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W014","from":"mcp01","fromConn":null,"to":"motp01","toConn":null,"layer":"power","duty":"high","signal":"Motor","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W015","from":"pdu01","fromConn":null,"to":"f5","toConn":null,"layer":"power","duty":"low","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W016","from":"f5","fromConn":null,"to":"sw01","toConn":null,"layer":"power","duty":"low","signal":"+48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
@@ -342,18 +342,14 @@ button.wi:hover{background:var(--accent-soft)}
  {"id":"W031","from":"sw02","fromConn":null,"to":"sw03","toConn":null,"layer":"signal","duty":"low","signal":"KSI chain","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W032","from":"sw03","fromConn":null,"to":"ksi01","toConn":null,"layer":"signal","duty":"low","signal":"KSI","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W040","from":"bat01","fromConn":null,"to":"inv01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
- {"id":"W041","from":"bat01","fromConn":null,"to":"gb01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":"H-001","via":["X02"],"notes":""},
- {"id":"W042","from":"gb01","fromConn":null,"to":"mcr01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":"H-002","via":[],"notes":""},
- {"id":"W043","from":"gb01","fromConn":null,"to":"mcl01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":"H-003","via":[],"notes":""},
- {"id":"W044","from":"gb01","fromConn":null,"to":"mcp01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":"H-004","via":[],"notes":""},
+ {"id":"W041","from":"bat01","fromConn":null,"to":"gb01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":["X02"],"notes":""},
+ {"id":"W042","from":"gb01","fromConn":null,"to":"mcr01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
+ {"id":"W043","from":"gb01","fromConn":null,"to":"mcl01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
+ {"id":"W044","from":"gb01","fromConn":null,"to":"mcp01","toConn":null,"layer":"ground","duty":"high","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W045","from":"gb01","fromConn":null,"to":"dc01","toConn":null,"layer":"ground","duty":"low","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""},
  {"id":"W046","from":"gb01","fromConn":null,"to":"disp01","toConn":null,"layer":"ground","duty":"low","signal":"−48V","kind":null,"wires":null,"gauge":null,"harness":null,"via":[],"notes":""}
 ],
 "harnesses":[
- {"id":"H-001","name":"Battery → BUS ±48V","type":"p2p","connA":null,"connB":[],"conductors":null,"status":"Draft","notes":"Grouping inferred from the green marks on the sketch. Confirm."},
- {"id":"H-002","name":"TRZ_CON_DX supply","type":"p2p","connA":null,"connB":[],"conductors":null,"status":"Draft","notes":"Grouping inferred from the orange marks on the sketch. Confirm."},
- {"id":"H-003","name":"TRZ_CON_SX supply","type":"p2p","connA":null,"connB":[],"conductors":null,"status":"Draft","notes":"Grouping inferred from the orange marks on the sketch. Confirm."},
- {"id":"H-004","name":"PTO_CON supply","type":"p2p","connA":null,"connB":[],"conductors":null,"status":"Draft","notes":"Grouping inferred from the pink marks on the sketch. Confirm."}
 ]
 }
 </script>
@@ -401,7 +397,7 @@ button.wi:hover{background:var(--accent-soft)}
 <script>
 (() => {
 'use strict';
-const STORE_KEY = 'eden-eae-dataset-v2';
+const STORE_KEY = 'eden-eae-dataset-v3';
 const LAYER_META = {
   power:  {name:'Power',   short:'PWR'},
   ground: {name:'Ground',  short:'GND'},
